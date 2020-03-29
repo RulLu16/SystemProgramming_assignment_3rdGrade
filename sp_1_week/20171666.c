@@ -120,15 +120,88 @@ void orHistoryAdd(char o[200]){ //to add another history
 }
 
 void orDump(command co, char o[200]){ //for order dump
-    printf("dump!\n");
+    int i,j;
+    int temp;
+
+    orHistoryAdd(o);
+
+   for(i=0;i<10;i++){
+        printf("%05X ",duAddr);
+        for(j=0;j<16;j++){
+            temp=memory[duAddr][j];
+            printf("%02X ",temp);
+        }
+        printf(";");
+
+        for(j=0;j<16;j++){
+            if(memory[duAddr][j]>=0x20 && memory[duAddr][j]<=0x7E){
+              printf("%c",memory[duAddr][j]);
+            }
+            else{
+                printf(".");
+            }
+        }
+        printf("\n");
+        
+        if(duAddr+16<MAXADDR){
+          duAddr+=16;
+          continue;
+        }
+        else{
+            duAddr=0;
+            break;
+        }
+    }
 }
 
 void orDumpStart(command co, char o[200]){ //for order dump x
-    printf("dump x\n");
+    int decstart;
+
+    if(orCheckHex(co.first)==0){
+        printf("Error: wrong command\n");
+        return;
+    }
+
+    decstart=(int)strtol(co.first,NULL,16);
+
+    if(decstart<MAXADDR){
+      orHistoryAdd(o);
+      if(decstart+160<MAXADDR)
+        orDumpPrint(decstart, decstart+160);
+      else
+        orDumpPrint(decstart, MAXADDR-1);
+    }
+    else{
+        printf("Error: over address\n");
+        return;
+    }
 }
 
 void orDumpStartEnd(command co, char o[200]){ //for order dump x, y
-    printf("dump x, y\n");
+    int decstart, decend;
+
+    if(orCheckHex(co.first)==0 || orCheckHex(co.second)==0){
+        printf("Error: wrong command\n");
+        return;
+    }
+
+    decstart=(int)strtol(co.first,NULL,16);
+    decend=(int)strtol(co.second,NULL,16);
+
+    if(decstart<MAXADDR && decend<MAXADDR){
+        if(decend<decstart){
+            printf("Error: wrong command\n");
+            return;
+        }
+        else{
+            orHistoryAdd(o);
+            orDumpPrint(decstart, decend);
+        }
+    }
+    else{
+        printf("Error: over address\n");
+        return;
+    }
 }
 
 void orDumpSelector(command co, char o[200]){ 
@@ -154,9 +227,29 @@ void orDumpSelector(command co, char o[200]){
 
 }
 
+void orDumpPrint(int start, int end){
+}
+
+int orCheckHex(char tok[10]){
+    int i=0;
+
+    while(1){
+        if((tok[i]>=48 && tok[i]<=57) || (tok[i]>=65 && tok[i]<=70) || (tok[i]>=97 && tok[i]<=102)){
+            if(tok[i+1]!='\0')
+              i++;
+            else
+              break;
+        }
+        else{
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
 int main(){
   int i,j;
-  int start, end;
   char input[200];
   command co;
 

@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+const int MAXADDR=1048576;
+const int MAXVALUE=256;
+
 //structs for linked list
 typedef struct _His{
     char order[200];
@@ -37,4 +40,6 @@ void orHistoryAdd(char[]);
 void orDump(command, char[]);
 void orDumpStart(command, char[]);
 void orDumpStartEnd(command, char[]);
-void orDumpSelector(command, char[]);  
+void orDumpSelector(command, char[]); 
+void orDumpPrint(int, int);
+int orCheckHex(char[]); // return 0 when it is not hex
