@@ -1,6 +1,5 @@
 #include "20171666.h"
 
-//test git
 command splitInput(char o[200]){
     char* ptr;
     int i=0;
