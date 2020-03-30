@@ -125,33 +125,15 @@ void orDump(command co, char o[200]){ //for order dump
 
     orHistoryAdd(o);
 
-   for(i=0;i<10;i++){
-        printf("%05X ",duAddr);
-        for(j=0;j<16;j++){
-            temp=memory[duAddr][j];
-            printf("%02X ",temp);
-        }
-        printf(";");
-
-        for(j=0;j<16;j++){
-            if(memory[duAddr][j]>=0x20 && memory[duAddr][j]<=0x7E){
-              printf("%c",memory[duAddr][j]);
-            }
-            else{
-                printf(".");
-            }
-        }
-        printf("\n");
-        
-        if(duAddr+16<MAXADDR){
-          duAddr+=16;
-          continue;
-        }
-        else{
-            duAddr=0;
-            break;
-        }
+    if(duAddr+160<MAXADDR){
+        orDumpPrint(duAddr,duAddr+159);
+        duAddr+=160;
     }
+    else{
+        orDumpPrint(duAddr,MAXADDR-1);
+        duAddr=0;
+    }
+
 }
 
 void orDumpStart(command co, char o[200]){ //for order dump x
@@ -167,7 +149,7 @@ void orDumpStart(command co, char o[200]){ //for order dump x
     if(decstart<MAXADDR){
       orHistoryAdd(o);
       if(decstart+160<MAXADDR)
-        orDumpPrint(decstart, decstart+160);
+        orDumpPrint(decstart, decstart+159);
       else
         orDumpPrint(decstart, MAXADDR-1);
     }
@@ -206,7 +188,7 @@ void orDumpStartEnd(command co, char o[200]){ //for order dump x, y
 
 void orDumpSelector(command co, char o[200]){ 
     // for select which dump this command is
-    
+  // printf("%s",o); 
     if(strcmp(co.third,"-")!=0){
         printf("Error: too much command\n");
         return;
@@ -228,6 +210,44 @@ void orDumpSelector(command co, char o[200]){
 }
 
 void orDumpPrint(int start, int end){
+    int i,j;
+    int stline=(start/16)*16;
+    int edline=(end/16)*16;
+    int valuepoint=stline;
+    int charpoint=stline;
+
+    for(i=stline;i<=edline;i+=16){
+        printf("%05X ",i);
+
+        for(j=0;j<16;j++){
+            if(valuepoint<start || valuepoint>end){
+                printf("   ");
+            }
+            else{
+                //printf("%d",memory[i/16][j]);
+                printf("%02X ",memory[i/16][j]);
+            }
+            valuepoint++;
+        }
+
+        printf(";");
+
+        for(j=0;j<16;j++){
+            if(charpoint<start || charpoint>end){
+                printf(".");
+            }
+            else if(memory[i/16][j]>=0x20 && memory[i/16][j]<=0x7E){
+                printf("%c",memory[i/16][j]);
+            }
+            else{
+                printf(".");
+            }
+            charpoint++;
+        }
+
+        printf("\n");
+    }
+
 }
 
 int orCheckHex(char tok[10]){
@@ -248,9 +268,92 @@ int orCheckHex(char tok[10]){
     return 1;
 }
 
+void orEdit(command co, char o[200]){
+    int addr;
+    int value;
+
+    if(orCheckHex(co.first)==0 || orCheckHex(co.second)==0){
+        printf("Error: wrong command\n");
+        return;
+    }
+    if(strcmp(co.third,"-")!=0){
+        printf("Error: wrong command\n");
+        return;
+    }
+
+    addr=(int)strtol(co.first,NULL,16);
+    value=(int)strtol(co.second,NULL,16);
+
+    if(addr<MAXADDR){
+        if(value>0xff){
+            printf("Error: over value\n");
+            return;
+        }
+
+        else{
+            orHistoryAdd(o);
+            memory[addr/16][addr%16]=value;
+        }
+
+    }
+    else{
+        printf("Error: over address\n");
+        return;
+    }
+
+}
+
+void orFill(command co, char o[200]){
+    int start, end, value;
+    int i;
+
+    if(orCheckHex(co.first)==0 || orCheckHex(co.second)==0 || orCheckHex(co.third)==0){
+        printf("Error: wrong command\n");
+        return;
+    }
+
+    start=(int)strtol(co.first,NULL,16);
+    end=(int)strtol(co.second,NULL,16);
+    value=(int)strtol(co.third,NULL,16);
+
+    if(start<MAXADDR && end<MAXADDR){
+        if(end<start){
+            printf("Error: wrong command\n");
+            return;
+        }
+        else if(value>0xff){
+            printf("Error: over value\n");
+            return;
+        }
+        else{
+            for(i=start;i<=end;i++){
+                memory[i/16][i%16]=value;
+            }
+            orHistoryAdd(o);
+        }
+
+    }
+    else{
+        printf("Error: over address\n");
+        return;
+    }
+      
+}
+
+void orReset(){
+    int i,j;
+
+    for(i=0;i<65536;i++){
+        for(j=0;j<16;j++){
+            memory[i][j]=0;
+        }
+    }
+}
+
 int main(){
   int i,j;
   char input[200];
+  char savein[200];
   command co;
 
   st=(His*)malloc(sizeof(His));
@@ -262,40 +365,46 @@ int main(){
 
       scanf("%[^\n]s",input);
       getchar();
-      //printf("%s",order);
-
+     // printf("%s",input);
+      
+      strcpy(savein,input);
       co=splitInput(input);
 
-      //printf("%s %s %s %s",co.order, co.first, co.second, co.third);
-
       if(strcmp(co.order,"help")==0 || strcmp(co.order,"h")==0){
-          orHistoryAdd(input);
+          orHistoryAdd(savein);
           orHelp();
       }
       else if(strcmp(co.order,"d")==0 || strcmp(co.order,"dir")==0){
-          orHistoryAdd(input);
+          orHistoryAdd(savein);
          orDir();
       }
       else if(strcmp(co.order,"q")==0 || strcmp(co.order,"quit")==0){
-          orHistoryAdd(input);
+          orHistoryAdd(savein);
           orQuit();
       }
       else if(strcmp(co.order,"hi")==0 || strcmp(co.order,"history")==0){
-          orHistoryAdd(input);
+          orHistoryAdd(savein);
           orHistory();
       }
       else if(strcmp(co.order,"du")==0 || strcmp(co.order,"dump")==0){
-          orDumpSelector(co, input);
+          orDumpSelector(co, savein);
       }
       else if(strcmp(co.order,"e")==0 || strcmp(co.order,"edit")==0){
+          orEdit(co,savein);
       }
       else if(strcmp(co.order,"f")==0 || strcmp(co.order,"fill")==0){
+          orFill(co,savein);
       }
       else if(strcmp(co.order,"reset")==0){
+          orHistoryAdd(savein);
+          orReset();
       }
       else if(strcmp(co.order,"opcode")==0){
+          orOpcode(co, savein);
       }
       else if(strcmp(co.order,"opcodelist")==0){
+          orHistoryAdd(savein);
+          orOpcodeList();
       }
 
 

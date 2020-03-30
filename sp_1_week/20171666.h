@@ -25,7 +25,7 @@ typedef struct _Command{
 // global var, init
 His* st;
 His* ed;
-char memory[65536][16]={0,};
+unsigned char memory[65536][16]={0,};
 int duAddr=0;
 
 //functions
@@ -43,3 +43,8 @@ void orDumpStartEnd(command, char[]);
 void orDumpSelector(command, char[]); 
 void orDumpPrint(int, int);
 int orCheckHex(char[]); // return 0 when it is not hex
+void orEdit(command, char[]);
+void orFill(command, char[]);
+void orReset();
+void orOpcode(command, char[]);
+void orOpcodeList();
