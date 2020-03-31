@@ -442,7 +442,7 @@ void orOpcode(command co, char o[200]){
 
         if(strcmp(point->mnem,co.first)==0){
             orHistoryAdd(o);
-            printf("opcode is %s\n",point->op);
+            printf("opcode is %s\n\n",point->op);
             return;
         }
 
@@ -469,6 +469,8 @@ void orOpcodeList(){
     hash* point;
     int i;
 
+    printf("\n");
+
     for(i=0;i<20;i++){
         point=hTable[i].link;
 
@@ -486,6 +488,7 @@ void orOpcodeList(){
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 int main(){
@@ -556,7 +559,7 @@ int main(){
 
 
       else{
-          printf("error\n");
+          printf("Error: wrong command\n");
       }
       
   }
