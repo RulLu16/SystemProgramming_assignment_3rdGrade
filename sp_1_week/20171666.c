@@ -381,13 +381,13 @@ void hashMake(){
         hashAdd(op,mnem,form,point);
     }
 
-    for(i=0;i<20;i++){
+    /*for(i=0;i<20;i++){
         if(hTable[i].link!=NULL){
-            printf("%s\n",hTable[i].link->op);
+            printf("%s\n",hTable[i].link->mnem);
         }
         else
           printf("null\n");
-    }
+    }*/
 
     fclose(fp);
 }
@@ -422,9 +422,70 @@ int hashFind(){
 }
 
 void orOpcode(command co, char o[200]){
+    int inx=co.first[0]-65;
+    hash* point;
+
+    if(co.first[0]>90 || co.first[0]<65){
+        printf("Error: wrong command\n");
+        return;
+    }
+
+    if(inx>=20){
+        inx=opFind(co.first);
+    }
+    //printf("%d\n",inx);
+    point=hTable[inx].link;
+
+    while(1){
+        if(point==NULL)
+          break;
+
+        if(strcmp(point->mnem,co.first)==0){
+            orHistoryAdd(o);
+            printf("opcode is %s\n",point->op);
+            return;
+        }
+
+        point=point->link;
+    }
+
+    printf("Error: there is no opcode\n");
+
+
+}
+
+int opFind(char op[10]){
+    int i;
+
+    for(i=0;i<20;i++){
+        if(hTable[i].link->mnem[0] == op[0])
+          return i;
+    }
+
+    return 19;
 }
 
 void orOpcodeList(){
+    hash* point;
+    int i;
+
+    for(i=0;i<20;i++){
+        point=hTable[i].link;
+
+        printf("%d : ",i);
+
+        while(1){
+            if(point==NULL)
+              break;
+
+            if(point->link==NULL)
+              printf("[%s,%s]",point->mnem, point->op);
+            else
+              printf("[%s,%s] -> ",point->mnem, point->op);
+            point=point->link;
+        }
+        printf("\n");
+    }
 }
 
 int main(){
@@ -438,11 +499,11 @@ int main(){
   ed=st;
 
   hTable=(hash*)malloc(sizeof(hash)*20);
+
   for(i=0;i<20;i++){
       //printf("dd");
       hTable[i].link=NULL;
   }
-
 
   hashMake();
 
@@ -462,7 +523,7 @@ int main(){
       }
       else if(strcmp(co.order,"d")==0 || strcmp(co.order,"dir")==0){
           orHistoryAdd(savein);
-         orDir();
+          orDir();
       }
       else if(strcmp(co.order,"q")==0 || strcmp(co.order,"quit")==0){
           orHistoryAdd(savein);

@@ -58,4 +58,5 @@ void hashMake();
 void hashAdd(char[], char[], char[], int);
 int hashFind();
 void orOpcode(command, char[]);
+int opFind(char[]);
 void orOpcodeList();
