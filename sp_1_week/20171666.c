@@ -350,6 +350,83 @@ void orReset(){
     }
 }
 
+void hashMake(){
+    int i;
+    int point;
+    int scan;
+    char op[10];
+    char mnem[10];
+    char form[10];
+    FILE* fp=fopen("opcode.txt","r");
+
+    if(fp==NULL){
+        printf("No files\n");
+        return;
+    }
+
+    while(1){
+        scan=fscanf(fp,"%s",op);
+
+        if(scan==EOF)
+          break;
+
+        fscanf(fp,"%s",mnem);
+        fscanf(fp,"%s",form);
+
+        point=(int)mnem[0]-65;
+
+        if(point>=20)
+          point=hashFind();
+
+        hashAdd(op,mnem,form,point);
+    }
+
+    for(i=0;i<20;i++){
+        if(hTable[i].link!=NULL){
+            printf("%s\n",hTable[i].link->op);
+        }
+        else
+          printf("null\n");
+    }
+
+    fclose(fp);
+}
+
+void hashAdd(char op[10], char mnem[10], char form[10], int key){
+    hash* temp=(hash*)malloc(sizeof(hash));
+    
+    strcpy(temp->op, op);
+    strcpy(temp->mnem, mnem);
+    strcpy(temp->form, form);
+
+    temp->link=hTable[key].link;
+    hTable[key].link=temp;
+}
+
+int hashFind(){
+    int i=0;
+    int result;
+
+    while(i<20){
+        if(hTable[i].link==NULL){
+            result=i;
+            break;
+        }
+        i++;
+    }
+
+    if(i==20)
+      return 19;
+    else
+      return result;
+}
+
+void orOpcode(command co, char o[200]){
+}
+
+void orOpcodeList(){
+}
+
 int main(){
   int i,j;
   char input[200];
@@ -359,6 +436,15 @@ int main(){
   st=(His*)malloc(sizeof(His));
   st->link=NULL;
   ed=st;
+
+  hTable=(hash*)malloc(sizeof(hash)*20);
+  for(i=0;i<20;i++){
+      //printf("dd");
+      hTable[i].link=NULL;
+  }
+
+
+  hashMake();
 
   while(1){
       printf("sicsim> ");

@@ -22,11 +22,19 @@ typedef struct _Command{
     char third[10];
 }command; // struct for user command
 
+typedef struct _Hash{
+    char op[10];
+    char mnem[10];
+    char form[10];
+    struct _Hash* link;
+}hash; //struct for hash table
+
 // global var, init
 His* st;
 His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
+hash* hTable;
 
 //functions
 
@@ -46,5 +54,8 @@ int orCheckHex(char[]); // return 0 when it is not hex
 void orEdit(command, char[]);
 void orFill(command, char[]);
 void orReset();
+void hashMake();
+void hashAdd(char[], char[], char[], int);
+int hashFind();
 void orOpcode(command, char[]);
 void orOpcodeList();
