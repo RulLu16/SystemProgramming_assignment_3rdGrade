@@ -306,7 +306,8 @@ void orFill(command co, char o[200]){
     int start, end, value;
     int i;
 
-    if(orCheckHex(co.first)==0 || orCheckHex(co.second)==0 || orCheckHex(co.third)==0){ // in the format fill x, y, z / x or y or z is not hex
+    if(orCheckHex(co.first)==0 || orCheckHex(co.second)==0 || orCheckHex(co.third)==0){
+        // in the format fill x, y, z / x or y or z is not hex
         printf("Error: wrong command\n");
         return;
     }
