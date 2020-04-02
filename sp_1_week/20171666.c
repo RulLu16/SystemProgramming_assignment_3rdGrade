@@ -372,10 +372,7 @@ void hashMake(){ // for make hash table
         fscanf(fp,"%s",mnem);
         fscanf(fp,"%s",form);
 
-        point=(int)mnem[0]-65; // get hash key
-
-        if(point>=20)
-          point=hashFind(); // if hash key >=20 then find another hash key
+        point=((int)mnem[0])%20; // get hash key
 
         hashAdd(op,mnem,form,point); // add to hash table
     }
@@ -394,35 +391,13 @@ void hashAdd(char op[10], char mnem[10], char form[10], int key){
     hTable[key].link=temp; // link to the hash table
 }
 
-int hashFind(){
-    int i=0;
-    int result;
-
-    while(i<20){ //search the 20 size of hash table
-        if(hTable[i].link==NULL){ // if there is a empty hash list index
-            result=i; // return that index
-            break;
-        }
-        i++;
-    }
-
-    if(i==20) // there is no empty hash table then just push it to the last list
-      return 19;
-    else
-      return result;
-}
-
 void orOpcode(command co, char o[200]){ // for opcode 
-    int inx=co.first[0]-65; //find hash key
+    int inx=((int)co.first[0])%20; //find hash key
     hash* point;
 
     if(co.first[0]>90 || co.first[0]<65){ // if mnemonic is not capital letters
         printf("Error: wrong command\n");
         return;
-    }
-
-    if(inx>=20){ // hash key >=20 then find correct hash key
-        inx=opFind(co.first);
     }
 
     point=hTable[inx].link;
@@ -443,17 +418,6 @@ void orOpcode(command co, char o[200]){ // for opcode
     printf("Error: there is no opcode\n");
 
 
-}
-
-int opFind(char op[10]){ // for find correct hash key
-    int i;
-
-    for(i=0;i<20;i++){
-        if(hTable[i].link->mnem[0] == op[0]) // if there is correct hash key
-          return i;
-    }
-
-    return 19; 
 }
 
 void orOpcodeList(){ //for print opcodelist

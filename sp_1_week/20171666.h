@@ -56,7 +56,5 @@ void orFill(command, char[]);
 void orReset();
 void hashMake();
 void hashAdd(char[], char[], char[], int);
-int hashFind();
 void orOpcode(command, char[]);
-int opFind(char[]);
 void orOpcodeList();
