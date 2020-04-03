@@ -23,8 +23,8 @@ typedef struct _Command{
 }command; // struct for user command
 
 typedef struct _Hash{
-    char op[10];
-    char mnem[10];
+    char op[100];
+    char mnem[20];
     char form[10];
     struct _Hash* link;
 }hash; //struct for hash table

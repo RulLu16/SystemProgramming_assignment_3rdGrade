@@ -1,0 +1,15 @@
+System programming project 1
+Simple SIC/XE machine
+
+****************************
+
+Compile command: make
+Execution command: ./20171666.out
+Clear exe file: make clean
+
+After execute the program please write this commad, "help" or "h"
+It will show you the commands that you can use.
+
+The memory limit is 0xfffff. Please remind it.
+
+****************************
