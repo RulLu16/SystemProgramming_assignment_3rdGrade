@@ -1,0 +1,19 @@
+System programming project 1
+Simple SIC/XE machine
+
+****************************
+
+Compile command: make
+Execution command: ./20171666.out
+Clear exe file: make clean
+
+After execute the program please write this commad, "help" or "h"
+It will show you the commands that you can use.
+
+The memory limit is 0xfffff. 
+Limit of a command length is 200.
+Limit of a value length in memory command is 10.
+
+Please remind it. Or you can get unexpected results.
+
+****************************
