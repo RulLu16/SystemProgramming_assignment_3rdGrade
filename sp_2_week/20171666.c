@@ -49,7 +49,9 @@ void orHelp(){ //for order 'help'
     printf("\nh[elp]\nd[ir]\nq[uit]\nhi[story]\n");
     printf("du[mp] [start, end]\ne[dit] address, value\n");
     printf("f[ill] start, end, value\nreset\nopcode mnemonic\n");
-    printf("opcodelist\n\n");
+    printf("opcodelist\n");
+    printf("assemble filename\ntype filename\n");
+    printf("symbol\n\n");
 }
 
 void orDir(){ //for order dir
