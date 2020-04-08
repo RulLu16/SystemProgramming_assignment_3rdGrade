@@ -17,15 +17,15 @@ typedef struct _His{
 
 typedef struct _Command{
     char order[200];
-    char first[10];
-    char second[10];
-    char third[10];
+    char first[30];
+    char second[30];
+    char third[30];
 }command; // struct for user command
 
 typedef struct _Hash{
     char op[100];
     char mnem[20];
-    char form[10];
+    char form[30];
     struct _Hash* link;
 }hash; //struct for hash table
 
@@ -58,3 +58,7 @@ void hashMake();
 void hashAdd(char[], char[], char[], int);
 void orOpcode(command, char[]);
 void orOpcodeList();
+void orType(command, char[]);
+void orAssemble(command, char[]);
+void orSymbol();
+

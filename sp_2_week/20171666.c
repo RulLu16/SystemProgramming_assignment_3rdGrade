@@ -449,6 +449,33 @@ void orOpcodeList(){ //for print opcodelist
     printf("\n");
 }
 
+void orType(command co, char o[200]){
+    char temp[100];
+    // 디렉토리 판별
+
+    //
+
+    FILE* tfp=fopen(co.first,"r");
+    
+    if(tfp==NULL){
+        printf("Error: there is no such file\n");
+        return;
+    }
+
+    orHistoryAdd(o);
+
+    while(fgets(temp, sizeof(temp),tfp)!=NULL){
+        printf("%s",temp);
+    }
+    
+}
+
+void orAssemble(command co, char o[200]){
+}
+
+void orSymbol(){
+}
+
 int main(){
   int i,j;
   char input[200];
@@ -512,7 +539,16 @@ int main(){
           orHistoryAdd(savein);
           orOpcodeList();
       }
-
+      else if(strcmp(co.order,"type")==0){
+          orType(co, savein);
+      }
+      else if(strcmp(co.order,"assemble")==0){
+          orAssemble(co, savein);
+      }
+      else if(strcmp(co.order,"symbol")==0){
+          orHistoryAdd(savein);
+          orSymbol();
+      }
 
       else{ // undefined command 
           printf("Error: wrong command\n");
