@@ -452,10 +452,26 @@ void orOpcodeList(){ //for print opcodelist
 void orType(command co, char o[200]){
     char temp[100];
     // 디렉토리 판별
+    DIR* tdir=NULL;
+    struct dirent* tdlist=NULL;
+    struct stat tbuf;
+    FILE* tfp;
 
-    //
+    if((tdir=opendir("."))==NULL){
+        printf("Error: there is no such file\n");
+        return;
+    } //if there is no file
 
-    FILE* tfp=fopen(co.first,"r");
+    while((tdlist=readdir(tdir))!=NULL){
+        lstat(tdlist->d_name, &tbuf);
+
+        if(S_ISDIR(tbuf.st_mode) && strcmp(tdlist->d_name, co.first)==0){
+          printf("Error: It is a directory name, not file name\n");
+          return;
+        }
+    }
+
+    tfp=fopen(co.first,"r");
     
     if(tfp==NULL){
         printf("Error: there is no such file\n");
@@ -467,7 +483,9 @@ void orType(command co, char o[200]){
     while(fgets(temp, sizeof(temp),tfp)!=NULL){
         printf("%s",temp);
     }
-    
+
+    fclose(tfp);
+    closedir(tdir);    
 }
 
 void orAssemble(command co, char o[200]){
