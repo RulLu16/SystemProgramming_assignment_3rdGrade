@@ -506,9 +506,40 @@ void orType(command co, char o[200]){
 }
 
 void orAssemble(command co, char o[200]){
+    int error;
+
+    error=assemMake(co.first);
+
+    if(error<0){
+    }
+
+    else{
+        if(error==0)
+          return;
+        else{
+            printf("Assemble Error: erro occurs at %d line.\n",error);
+            return;
+        }
+    }
+}
+
+int assemMake(char name[50]){
+    FILE* afp=fopen(name,"r");
+
+    if(afp==NULL){
+        printf("Error: no such file.\n");
+        return 0;
+    }
+
+    
 }
 
 void orSymbol(){
+    if(sTable->link==NULL){
+        printf("Error: no symbol table. please assemble first\n");
+        return;
+    }
+
 }
 
 int main(){
@@ -522,6 +553,13 @@ int main(){
   ed=st;
 
   hTable=(hash*)malloc(sizeof(hash)*20);
+
+  symb* sTable=(symb*)malloc(sizeof(symb));
+  sTable->link=NULL;
+
+  Ast=(assem*)malloc(sizeof(assem));
+  Ast->link=NULL;
+  Aed=Ast;
 
   for(i=0;i<20;i++){
       hTable[i].link=NULL; // init the hash table

@@ -50,6 +50,8 @@ unsigned char memory[65536][16]={0,};
 int duAddr=0;
 hash* hTable;
 symb* sTable;
+assem* Ast;
+assem* Aed;
 
 //functions
 
@@ -77,7 +79,8 @@ void orOpcodeList();
 void orType(command, char[]);
 void orAssemble(command, char[]);
 void orSymbol();
-//void symbolMake();
-//void symbolAdd(char[], int);
+int assemMake(char[]);
+void symbolAdd(char[], int);
+void assemAdd(int, char[], char[], char[]);
 //void symbolDelete();
 
