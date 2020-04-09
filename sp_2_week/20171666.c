@@ -356,9 +356,9 @@ void hashMake(){ // for make hash table
     int i;
     int point;
     int scan;
-    char op[10];
-    char mnem[10];
-    char form[10];
+    char op[50];
+    char mnem[20];
+    char form[30];
     FILE* fp=fopen("opcode.txt","r"); // open the file
 
     if(fp==NULL){
@@ -383,7 +383,7 @@ void hashMake(){ // for make hash table
     fclose(fp);
 }
 
-void hashAdd(char op[10], char mnem[10], char form[10], int key){
+void hashAdd(char op[50], char mnem[20], char form[30], int key){
     hash* temp=(hash*)malloc(sizeof(hash));
     
     strcpy(temp->op, op);
@@ -396,6 +396,7 @@ void hashAdd(char op[10], char mnem[10], char form[10], int key){
 
 void orOpcode(command co, char o[200]){ // for opcode 
     int inx=((int)co.first[0])%20; //find hash key
+    int result=-1;
     hash* point;
 
     if(co.first[0]>90 || co.first[0]<65){ // if mnemonic is not capital letters
@@ -405,22 +406,34 @@ void orOpcode(command co, char o[200]){ // for opcode
 
     point=hTable[inx].link;
 
+    result=opcodeFind(point, co.first);
+
+    if(result<0)
+      printf("Error: there is no opcode\n");
+
+    else{
+        orHistoryAdd(o);
+        printf("opcode is %02X\n\n",result);
+    }
+
+}
+
+int opcodeFind(hash* point, char op[50]){
+    int result;
+
     while(1){
         if(point==NULL)
           break;
 
-        if(strcmp(point->mnem,co.first)==0){ // if mnemonic is match to the hash table
-            orHistoryAdd(o);
-            printf("opcode is %s\n\n",point->op); 
-            return;
+        if(strcmp(point->mnem,op)==0){ // if mnemonic is match to the hash table
+            result=(int)strtol(point->op, NULL, 16);
+            return result;
         }
 
         point=point->link;
     }
 
-    printf("Error: there is no opcode\n");
-
-
+    return -1;
 }
 
 void orOpcodeList(){ //for print opcodelist
@@ -459,6 +472,7 @@ void orType(command co, char o[200]){
 
     if((tdir=opendir("."))==NULL){
         printf("Error: there is no such file\n");
+        closedir(tdir);
         return;
     } //if there is no file
 
@@ -467,6 +481,7 @@ void orType(command co, char o[200]){
 
         if(S_ISDIR(tbuf.st_mode) && strcmp(tdlist->d_name, co.first)==0){
           printf("Error: It is a directory name, not file name\n");
+          closedir(tdir);
           return;
         }
     }
@@ -475,6 +490,8 @@ void orType(command co, char o[200]){
     
     if(tfp==NULL){
         printf("Error: there is no such file\n");
+        closedir(tdir);
+        fclose(tfp);
         return;
     }
 

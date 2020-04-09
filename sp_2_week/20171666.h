@@ -23,11 +23,25 @@ typedef struct _Command{
 }command; // struct for user command
 
 typedef struct _Hash{
-    char op[100];
+    char op[50];
     char mnem[20];
     char form[30];
     struct _Hash* link;
 }hash; //struct for hash table
+
+typedef struct _Assem{
+    int loc;
+    char state[50];
+    char mnem[50];
+    char addr[50];
+    struct _Assem* link;
+}assem; //struct for saving asm file
+
+typedef struct _Symb{
+    char state[50];
+    int loc;
+    struct _Symb* link;
+}symb; //struct for symbol table
 
 // global var, init
 His* st;
@@ -35,6 +49,7 @@ His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
 hash* hTable;
+symb* sTable;
 
 //functions
 
@@ -57,8 +72,12 @@ void orReset();
 void hashMake();
 void hashAdd(char[], char[], char[], int);
 void orOpcode(command, char[]);
+int opcodeFind(hash*, char[]);
 void orOpcodeList();
 void orType(command, char[]);
 void orAssemble(command, char[]);
 void orSymbol();
+//void symbolMake();
+//void symbolAdd(char[], int);
+//void symbolDelete();
 
