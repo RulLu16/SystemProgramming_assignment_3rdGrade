@@ -38,8 +38,8 @@ typedef struct _Assem{
 }assem; //struct for saving asm file
 
 typedef struct _Symb{
-    char state[50];
     int loc;
+    char state[50];
     struct _Symb* link;
 }symb; //struct for symbol table
 
@@ -49,7 +49,8 @@ His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
 hash* hTable;
-symb* sTable;
+symb* sPresent;
+symb* sSaved;
 assem* Ast;
 assem* Aed;
 
@@ -74,13 +75,14 @@ void orReset();
 void hashMake();
 void hashAdd(char[], char[], char[], int);
 void orOpcode(command, char[]);
-int opcodeFind(hash*, char[]);
+hash* opcodeFind(hash*, char[]);
 void orOpcodeList();
 void orType(command, char[]);
 void orAssemble(command, char[]);
 void orSymbol();
-int assemMake(char[]);
-void symbolAdd(char[], int);
-void assemAdd(int, char[], char[], char[]);
-//void symbolDelete();
-
+int asmMake(char[]); // 0 for no file, integer for error line, -1 for no error
+int formSelect(char[]);
+void symbolAdd(int, char[]);
+void symbolDelete();
+void assembleAdd(int, char[], char[], char[]);
+void assembleDelete();

@@ -396,7 +396,7 @@ void hashAdd(char op[50], char mnem[20], char form[30], int key){
 
 void orOpcode(command co, char o[200]){ // for opcode 
     int inx=((int)co.first[0])%20; //find hash key
-    int result=-1;
+    hash* result;
     hash* point;
 
     if(co.first[0]>90 || co.first[0]<65){ // if mnemonic is not capital letters
@@ -408,17 +408,17 @@ void orOpcode(command co, char o[200]){ // for opcode
 
     result=opcodeFind(point, co.first);
 
-    if(result<0)
+    if(result==NULL)
       printf("Error: there is no opcode\n");
 
     else{
         orHistoryAdd(o);
-        printf("opcode is %02X\n\n",result);
+        printf("opcode is %02X\n\n",(int)strtol(result->op,NULL, 16));
     }
 
 }
 
-int opcodeFind(hash* point, char op[50]){
+hash* opcodeFind(hash* point, char op[50]){
     int result;
 
     while(1){
@@ -426,14 +426,14 @@ int opcodeFind(hash* point, char op[50]){
           break;
 
         if(strcmp(point->mnem,op)==0){ // if mnemonic is match to the hash table
-            result=(int)strtol(point->op, NULL, 16);
-            return result;
+            //result=(int)strtol(point->op, NULL, 16);
+            return point;
         }
 
         point=point->link;
     }
 
-    return -1;
+    return NULL;
 }
 
 void orOpcodeList(){ //for print opcodelist
@@ -505,10 +505,10 @@ void orType(command co, char o[200]){
     closedir(tdir);    
 }
 
-void orAssemble(command co, char o[200]){
+void orAssemble(command co, char o[200]){ // for make obj, lst files
     int error;
 
-    error=assemMake(co.first);
+    error=asmMake(co.first);
 
     if(error<0){
     }
@@ -517,30 +517,124 @@ void orAssemble(command co, char o[200]){
         if(error==0)
           return;
         else{
-            printf("Assemble Error: erro occurs at %d line.\n",error);
+            printf("Assemble Error at %d line.\n",error);
+            assembleDelete();
+            symbolDelete();
             return;
         }
     }
+
+    printf("dd");
 }
 
-int assemMake(char name[50]){
-    FILE* afp=fopen(name,"r");
+void orSymbol(){ // for print symbol table
+    symb* point=sSaved->link;
 
-    if(afp==NULL){
-        printf("Error: no such file.\n");
-        return 0;
-    }
-
-    
-}
-
-void orSymbol(){
-    if(sTable->link==NULL){
-        printf("Error: no symbol table. please assemble first\n");
+    if(point==NULL){
+        printf("There's no symbol table. Please assemble first\n");
         return;
     }
 
+    while(1){
+        printf("\t%s\t%04X",point->state, point->loc);
+
+        point=point->link;
+
+        if(point==NULL)
+          break;
+    }
 }
+
+int asmMake(char file[30]){
+    FILE* afp=fopen(file, "r");
+    char state[50];
+    char mnem[50];
+    char addr[50];
+    char temp[2];
+    char buf[31];
+    int loc=0;
+    int line=5;
+    int scan;
+    int form;
+
+    if(afp==NULL){
+        printf("Error: there's no such file\n");
+        return;
+    }
+
+    while(1){
+        scan=fscanf(afp, "%1c", temp[0]);
+        temp[1]='\0';
+
+        if(scan==EOF)
+          break;
+
+        if(strcmp(temp, ".")==0){
+            fgets(afp, 31, buf);
+        }
+        else if(strcmp(temp, " ")==0){ // no label
+            fscanf("%s %s", mnem, addr);
+            strcpy(state, "-");
+            
+            form=formSelect(mnem);
+
+            if(form==0)
+                return line;
+            else{
+                assembleAdd(loc, state, mnem, addr);
+                loc+=form;
+            }
+        }
+        else{ // there is a label
+            fscanf("%s %s %s", state, mnem, addr);
+
+            strcpy(buf, temp);
+            strcat(buf, state);
+            strcpy(state, buf);
+            
+            form=formSelect(mnem);
+
+            if(form==0)
+                return line;
+            else{
+                assembleAdd(loc, state, mnem, addr);
+                symbolAdd(loc, state);
+                loc+=form;
+            }
+        }
+        line+=5;
+    }
+
+    fclose(afp);
+}
+
+void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
+    assem* new=(assem*)malloc(sizeof(assme));
+
+    new->loc=loc;
+    strcpy(new->state, state);
+    strcpy(new->mnem, mnem);
+    strcpy(new->addr, addr);
+    
+    new->link=Aed->link;
+    Aed->link=new;
+    Aed=new; //link to the history list
+}
+
+void symbolAdd(int loc, char state[50]){
+    symb* new=(symb*)malloc(sizeof(symb));
+    symb* point=sPresent;
+
+    new->loc=loc;
+    strcpy(new->state, state);
+
+   /* while(1){
+        if(point->link==NULL){
+            if(strcmp(point->state, new->state)==
+
+    }*/
+}
+
 
 int main(){
   int i,j;
@@ -554,8 +648,10 @@ int main(){
 
   hTable=(hash*)malloc(sizeof(hash)*20);
 
-  symb* sTable=(symb*)malloc(sizeof(symb));
-  sTable->link=NULL;
+  sPresent=(symb*)malloc(sizeof(symb));
+  sSaved=(symb*)malloc(sizeof(symb));
+  sPresent->link=NULL;
+  sSaved->link=NULL;
 
   Ast=(assem*)malloc(sizeof(assem));
   Ast->link=NULL;
