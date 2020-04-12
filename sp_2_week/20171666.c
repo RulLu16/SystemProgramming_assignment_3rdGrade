@@ -507,15 +507,33 @@ void orType(command co, char o[200]){
 
 void orAssemble(command co, char o[200]){ // for make obj, lst files
     int error;
+    symb* t=sPresent->link;
+    assem* a=Ast->link;
 
     error=asmMake(co.first);
 
     if(error<0){
+        while(1){
+            if(t==NULL)
+              break;
+            printf("%d %s\n",t->loc, t->state);
+            t=t->link;
+        }
+        while(1){
+            if(a==NULL)
+              break;
+            printf("%d %s %s %s\n",a->loc, a->state, a->mnem, a->addr);
+            a=a->link;
+        }
+
+
     }
 
     else{
-        if(error==0)
+        if(error==0){
+            printf("dd");
           return;
+        }
         else{
             printf("Assemble Error at %d line.\n",error);
             assembleDelete();
@@ -523,8 +541,6 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
             return;
         }
     }
-
-    printf("dd");
 }
 
 void orSymbol(){ // for print symbol table
@@ -550,66 +566,95 @@ int asmMake(char file[30]){
     char state[50];
     char mnem[50];
     char addr[50];
-    char temp[2];
-    char buf[31];
+    char str[100];
     int loc=0;
     int line=5;
-    int scan;
+    int split;
     int form;
 
     if(afp==NULL){
         printf("Error: there's no such file\n");
-        return;
+        return 0;
     }
 
-    while(1){
-        scan=fscanf(afp, "%1c", temp[0]);
-        temp[1]='\0';
+    while(!feof(afp)){
+        fgets(str, 100, afp);
 
-        if(scan==EOF)
-          break;
+        strcpy(state, "-");
+        strcpy(mnem, "-");
+        strcpy(addr, "-");
 
-        if(strcmp(temp, ".")==0){
-            fgets(afp, 31, buf);
+        split=asmSplit(str, state, mnem, addr);
+
+        if(split==0){
+            line+=5;
+            continue;
         }
-        else if(strcmp(temp, " ")==0){ // no label
-            fscanf("%s %s", mnem, addr);
-            strcpy(state, "-");
-            
-            form=formSelect(mnem);
-
-            if(form==0)
-                return line;
-            else{
-                assembleAdd(loc, state, mnem, addr);
-                loc+=form;
-            }
+        else{
+            form=3; //formSelect(mnem, addr); find the opcode
         }
-        else{ // there is a label
-            fscanf("%s %s %s", state, mnem, addr);
 
-            strcpy(buf, temp);
-            strcat(buf, state);
-            strcpy(state, buf);
-            
-            form=formSelect(mnem);
+        if(form==0)
+          return line; //if no opcode found.
 
-            if(form==0)
-                return line;
-            else{
-                assembleAdd(loc, state, mnem, addr);
-                symbolAdd(loc, state);
-                loc+=form;
-            }
-        }
+        if(split==2) // if there is symbol
+          symbolAdd(loc, state);
+
+        assembleAdd(loc, state, mnem, addr);
+        loc+=form;
         line+=5;
     }
 
     fclose(afp);
+    return -1;
+}
+
+int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
+    char* ptr;
+    int i=0;
+    char temp=str[0];
+
+    if(temp=='.'){
+        return 0;
+    }
+
+    else if(temp==' '){
+        ptr=strtok(str," ");
+        if(ptr!=NULL)
+          strcpy(mnem, ptr);
+
+        ptr=strtok(NULL, " ");
+        if(ptr!=NULL)
+          strcpy(addr, ptr);
+
+        ptr=strtok(NULL," ");
+
+        if(ptr!=NULL){
+            strcat(addr, ptr);
+        }
+
+        return 1;
+    }
+
+    else{
+        ptr=strtok(str," ");
+        if(ptr!=NULL)
+          strcpy(state, ptr);
+
+        ptr=strtok(NULL," ");
+        if(ptr!=NULL)
+          strcpy(mnem, ptr);
+
+        ptr=strtok(NULL," ");
+        if(ptr!=NULL)
+          strcpy(addr, ptr);
+
+        return 2;
+    }
 }
 
 void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
-    assem* new=(assem*)malloc(sizeof(assme));
+    assem* new=(assem*)malloc(sizeof(assem));
 
     new->loc=loc;
     strcpy(new->state, state);
@@ -621,20 +666,45 @@ void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
     Aed=new; //link to the history list
 }
 
-void symbolAdd(int loc, char state[50]){
+int symbolAdd(int loc, char state[50]){
     symb* new=(symb*)malloc(sizeof(symb));
     symb* point=sPresent;
+    int flag;
 
     new->loc=loc;
     strcpy(new->state, state);
 
-   /* while(1){
+    while(1){
         if(point->link==NULL){
-            if(strcmp(point->state, new->state)==
+            new->link=point->link;
+            point->link=new;
+            break;
+        }
 
-    }*/
+        flag=strcmp(point->link->state, new->state);
+
+        if(flag==0){
+            free(new);
+            return 0;
+        }
+        else if(flag<0){
+            point=point->link;
+        }
+        else{
+            new->link=point->link;
+            point->link=new;
+            break;
+        }
+    }
+
+    return 1;
 }
 
+void assembleDelete(){
+}
+
+void symbolDelete(){
+}
 
 int main(){
   int i,j;
