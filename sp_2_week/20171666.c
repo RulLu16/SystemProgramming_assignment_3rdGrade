@@ -507,31 +507,14 @@ void orType(command co, char o[200]){
 
 void orAssemble(command co, char o[200]){ // for make obj, lst files
     int error;
-    symb* t=sPresent->link;
-    assem* a=Ast->link;
 
     error=asmMake(co.first);
 
     if(error<0){
-        while(1){
-            if(t==NULL)
-              break;
-            printf("%d %s\n",t->loc, t->state);
-            t=t->link;
-        }
-        while(1){
-            if(a==NULL)
-              break;
-            printf("%d %s %s %s\n",a->loc, a->state, a->mnem, a->addr);
-            a=a->link;
-        }
-
-
-    }
+      }
 
     else{
         if(error==0){
-            printf("dd");
           return;
         }
         else{
@@ -541,6 +524,9 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
             return;
         }
     }
+    orHistoryAdd(o);
+    sSaved->link=sPresent->link;
+    sPresent->link=NULL;
 }
 
 void orSymbol(){ // for print symbol table
@@ -552,7 +538,7 @@ void orSymbol(){ // for print symbol table
     }
 
     while(1){
-        printf("\t%s\t%04X",point->state, point->loc);
+        printf("\t%s\t%04X\n",point->state, point->loc);
 
         point=point->link;
 
@@ -571,6 +557,7 @@ int asmMake(char file[30]){
     int line=5;
     int split;
     int form;
+    int add;
 
     if(afp==NULL){
         printf("Error: there's no such file\n");
@@ -591,14 +578,17 @@ int asmMake(char file[30]){
             continue;
         }
         else{
-            form=3; //formSelect(mnem, addr); find the opcode
+            form=formSelect(mnem, addr);// find the opcode
         }
 
-        if(form==0)
+        if(form<0)
           return line; //if no opcode found.
 
-        if(split==2) // if there is symbol
-          symbolAdd(loc, state);
+        if(split==2 && line>5) // if there is symbol
+          add=symbolAdd(loc, state);
+
+        if(add==0)
+          return line; // there is same name
 
         assembleAdd(loc, state, mnem, addr);
         loc+=form;
@@ -609,12 +599,16 @@ int asmMake(char file[30]){
     return -1;
 }
 
+int formSelect(char mnem[50], char addr[50]){
+    
+}
+
 int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
     char* ptr;
     int i=0;
     char temp=str[0];
 
-    if(temp=='.'){
+    if(temp=='.' || temp=='\n'){
         return 0;
     }
 

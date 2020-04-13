@@ -81,7 +81,7 @@ void orType(command, char[]);
 void orAssemble(command, char[]);
 void orSymbol();
 int asmMake(char[]); // 0 for no file, integer for error line, -1 for no error
-//int formSelect(char[], char[]);
+int formSelect(char[], char[]);
 int asmSplit(char[], char[], char[], char[]);
 void assembleAdd(int, char[], char[], char[]);
 int symbolAdd(int, char[]);
