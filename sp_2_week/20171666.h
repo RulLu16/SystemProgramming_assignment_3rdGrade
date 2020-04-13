@@ -75,7 +75,7 @@ void orReset();
 void hashMake();
 void hashAdd(char[], char[], char[], int);
 void orOpcode(command, char[]);
-hash* opcodeFind(hash*, char[]);
+hash* opcodeFind(hash*, char[]); // no opcode then return null
 void orOpcodeList();
 void orType(command, char[]);
 void orAssemble(command, char[]);

@@ -600,6 +600,34 @@ int asmMake(char file[30]){
 }
 
 int formSelect(char mnem[50], char addr[50]){
+    hash* find;
+
+    if(mnem[0]=='+')
+      return 4;
+
+    find=opcodeFind(hTable[(int)mnem[0]%20].link, mnem);
+
+    if(find==NULL){
+        if(strcmp(mnem, "BASE")==0){
+           }
+        else if(strcmp(mnem, "BYTE")==0){
+        }
+        else if(strcmp(mnem, "WORD")==0){
+        }
+        else if(strcmp(mnem, "RESB")==0){
+        }
+        else if(strcmp(mnem, "RESW")==0){
+        }
+
+        else{
+            return -1;
+        }
+
+    }
+
+    else{
+        return (int)find->form[0];
+    }
     
 }
 
