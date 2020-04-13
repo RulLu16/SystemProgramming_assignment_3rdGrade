@@ -557,7 +557,7 @@ int asmMake(char file[30]){
     int line=5;
     int split;
     int form;
-    int add;
+    int add=1;
 
     if(afp==NULL){
         printf("Error: there's no such file\n");
@@ -566,6 +566,7 @@ int asmMake(char file[30]){
 
     while(!feof(afp)){
         fgets(str, 100, afp);
+        str[strlen(str)-1]='\0';
 
         strcpy(state, "-");
         strcpy(mnem, "-");
@@ -580,12 +581,14 @@ int asmMake(char file[30]){
         else{
             form=formSelect(mnem, addr);// find the opcode
         }
+        //printf("%d\n",form);
 
         if(form<0)
           return line; //if no opcode found.
 
-        if(split==2 && line>5) // if there is symbol
+        if(split==2 && line>5){ // if there is symbol
           add=symbolAdd(loc, state);
+        }
 
         if(add==0)
           return line; // there is same name
@@ -601,6 +604,7 @@ int asmMake(char file[30]){
 
 int formSelect(char mnem[50], char addr[50]){
     hash* find;
+    int length=2;
 
     if(mnem[0]=='+')
       return 4;
@@ -609,14 +613,39 @@ int formSelect(char mnem[50], char addr[50]){
 
     if(find==NULL){
         if(strcmp(mnem, "BASE")==0){
-           }
+            return 0;
+        }
         else if(strcmp(mnem, "BYTE")==0){
+            if(addr[0]=='C'){
+                while(1){
+                    if(addr[length]=='\'')
+                      break;
+                    length++;
+                }
+                return length-2;
+            }
+            else if(addr[0]=='X'){
+                return 1;
+            }
+            else{
+                return -1;
+            }
+
         }
         else if(strcmp(mnem, "WORD")==0){
+            return 3;
         }
         else if(strcmp(mnem, "RESB")==0){
+            return atoi(addr);
         }
         else if(strcmp(mnem, "RESW")==0){
+            return atoi(addr)*3;
+        }
+        else if(strcmp(mnem, "START")==0){
+            return 0;
+        }
+        else if(strcmp(mnem, "END")==0){
+            return 0;
         }
 
         else{
@@ -626,7 +655,7 @@ int formSelect(char mnem[50], char addr[50]){
     }
 
     else{
-        return (int)find->form[0];
+        return (int)(find->form[0]-48);
     }
     
 }
@@ -636,7 +665,7 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
     int i=0;
     char temp=str[0];
 
-    if(temp=='.' || temp=='\n'){
+    if(temp=='.'){
         return 0;
     }
 
@@ -644,6 +673,8 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
         ptr=strtok(str," ");
         if(ptr!=NULL)
           strcpy(mnem, ptr);
+        else
+          return 0;
 
         ptr=strtok(NULL, " ");
         if(ptr!=NULL)
@@ -662,6 +693,8 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
         ptr=strtok(str," ");
         if(ptr!=NULL)
           strcpy(state, ptr);
+        else
+          return 0;
 
         ptr=strtok(NULL," ");
         if(ptr!=NULL)
