@@ -506,24 +506,34 @@ void orType(command co, char o[200]){
 }
 
 void orAssemble(command co, char o[200]){ // for make obj, lst files
-    int error;
+    int asmError;
+    int objError;
 
-    error=asmMake(co.first);
+    asmError=asmMake(co.first);
 
-    if(error<0){
+    if(asmError<0){
+        objError=lstObjMake(co.first); // make lst and obj files
+
+        if(objError>0){ // if there is error in lst and obj file
+            printf("Assemble Error at %d line.\n",objError);
+            assembleDelete();
+            symbolDelete();
+            return;
+        }
       }
 
     else{
-        if(error==0){
+        if(asmError==0){
           return;
         }
         else{
-            printf("Assemble Error at %d line.\n",error);
+            printf("Assemble Error at %d line.\n",asmError);
             assembleDelete();
             symbolDelete();
             return;
         }
     }
+
     orHistoryAdd(o);
     printf("Successfully assemble %s\n",co.first);
     sSaved->link=sPresent->link;
@@ -576,6 +586,7 @@ int asmMake(char file[30]){
         split=asmSplit(str, state, mnem, addr);
 
         if(split==0){
+            assembleAdd(loc, state, mnem, addr);
             line+=5;
             continue;
         }
@@ -667,6 +678,7 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
     char temp=str[0];
 
     if(temp=='.'){
+        strcpy(mnem, str);
         return 0;
     }
 
@@ -754,6 +766,18 @@ int symbolAdd(int loc, char state[50]){
     }
 
     return 1;
+}
+
+int lstObjMake(char file[30]){
+    FILE* lst;
+    FILE* obj;
+    char obcode[20];
+    int op;
+    int n, i, x, b, p, e;
+    int line=5;
+
+    //fclose(lst);
+    //fclose(obj);
 }
 
 void assembleDelete(){
