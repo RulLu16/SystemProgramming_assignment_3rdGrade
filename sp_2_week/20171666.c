@@ -525,6 +525,7 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
         }
     }
     orHistoryAdd(o);
+    printf("Successfully assemble %s\n",co.first);
     sSaved->link=sPresent->link;
     sPresent->link=NULL;
 }
