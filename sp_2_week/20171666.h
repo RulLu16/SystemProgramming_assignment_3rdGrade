@@ -86,5 +86,6 @@ int asmSplit(char[], char[], char[], char[]);
 void assembleAdd(int, char[], char[], char[]);
 int symbolAdd(int, char[]);
 int lstObjMake(char []);
+symb* symbolFind(char[]);
 void assembleDelete();
 void symbolDelete();

@@ -579,9 +579,9 @@ int asmMake(char file[30]){
         fgets(str, 100, afp);
         str[strlen(str)-1]='\0';
 
-        strcpy(state, "-");
-        strcpy(mnem, "-");
-        strcpy(addr, "-");
+        strcpy(state, "\t");
+        strcpy(mnem, "\t");
+        strcpy(addr, "\t");
 
         split=asmSplit(str, state, mnem, addr);
 
@@ -771,13 +771,67 @@ int symbolAdd(int loc, char state[50]){
 int lstObjMake(char file[30]){
     FILE* lst;
     FILE* obj;
-    char obcode[20];
-    int op;
+    hash* op;
+    assem* point=Ast->link;
+    symb* label;
+    
+    char name[20];
     int n, i, x, b, p, e;
     int line=5;
 
-    //fclose(lst);
-    //fclose(obj);
+    file[strlen(file)-4]='\0';
+
+    strcpy(name, file);
+    strcat(name, ".lst");
+
+    lst=fopen(name,"w");
+    
+    strcpy(name, file);
+    strcat(name, ".obj");
+
+    obj=fopen(name,"w");
+
+    while(1){
+        if(point==NULL)
+          break;
+
+        n=i=x=b=p=e=0;
+        op=opcodeFind(hTable[(int)point->mnem[0]%20].link,point->mnem);
+
+        if(op!=NULL){
+            
+
+        }
+
+        else{
+            if(strcmp(point->mnem,"START")==0){
+                fprintf(lst,"%d\t%d\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
+                fprintf(obj,"H%s%06X\n",point->state,atoi(point->addr));
+
+            }
+            else if(strcmp(point->mnem, "END")==0){
+                fprintf(lst,"%d\t\t\t\t\t%s\t%s\n",line,point->mnem, point->addr);
+                fprintf(obj,"E%06X\n",atoi(Ast->link->addr));
+            }
+            else if(strcmp(point->mnem, "BYTE")==0){
+            }
+            else if(strcmp(point->mnem, "WORD")==0){
+                fprintf(lst,"%d\t%d\t%s\t%s\t%s\t%06X\n",line,point->loc,point->state,point->mnem,point->addr,atoi(point->addr));
+            }
+            else if(point->mnem[0]=='.' || strcmp(point->mnem,"\t")==0){
+                fprintf(lst,"%d\t\t%s\n",line,point->mnem);
+            }
+            else{
+                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc,point->state, point->mnem, point->addr);
+            }
+
+        }
+        line+=5;
+        point=point->link;
+    }
+
+    fclose(lst);
+    fclose(obj);
 }
 
 void assembleDelete(){
