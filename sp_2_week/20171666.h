@@ -80,12 +80,21 @@ void orOpcodeList();
 void orType(command, char[]);
 void orAssemble(command, char[]);
 void orSymbol();
+
+/*==============================================
+  for pass 1
+  ==============================================*/
 int asmMake(char[]); // 0 for no file, integer for error line, -1 for no error
 int formSelect(char[], char[]);
 int asmSplit(char[], char[], char[], char[]);
 void assembleAdd(int, char[], char[], char[]);
 int symbolAdd(int, char[]);
+
+/*==============================================
+  for pass 2
+  ==============================================*/
 int lstObjMake(char []);
+int ojcodeMake(assem*, char[]); // if no oj return -1, no oj and variable return 0, is oj return 1
 symb* symbolFind(char[]);
 void assembleDelete();
 void symbolDelete();
