@@ -781,8 +781,8 @@ int lstObjMake(char file[30]){
     assem* point=Ast->link;
     char ojcode[10];
     char name[20];
-    char objLine[100];
-    char initLine[100]="T";
+    char objLine[100]="\0";
+    int objStart=0;
     int objCount=0;
     int line=5;
     int isOjcode;
@@ -826,15 +826,18 @@ int lstObjMake(char file[30]){
         }
 
         else if(isOjcode>0){
+            if(objCount==0){
+                objStart=point->loc;
+            }
+
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
 
             if(objCount>25){
-                // plus first num
-                strcat(initLine, objLine);
-                strcpy(objLine, initLine);
+                objCount+=strlen(ojcode)/2;
+                fprintf(obj,"T%06X%02X",objStart, objCount);
                 fprintf(obj, "%s\n",objLine);
                 objCount=0;
-                strcpy(initLine, "T");
+                strcpy(objLine,"\0");
             }
             else{
                 objCount+=strlen(ojcode)/2;
@@ -843,12 +846,12 @@ int lstObjMake(char file[30]){
         }
         else{
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
-               // plus first num
-            strcat(initLine, objLine);
-            strcpy(objLine, initLine);
+
+            objCount+=strlen(ojcode)/2;
+            fprintf(obj,"T%06X%02X",objStart, objCount);
             fprintf(obj, "%s\n",objLine);
             objCount=0;
-            strcpy(initLine, "T");
+            strcpy(objLine,"\0");
         }
 
         line+=5;
@@ -861,7 +864,8 @@ int lstObjMake(char file[30]){
 }
 
 int ojcodeMake(assem* point, char oj[10]){
-    return -1;
+    strcpy(oj,"000000");
+    return 1;
 }
 
 void assembleDelete(){
