@@ -586,9 +586,9 @@ int asmMake(char file[30]){
         fgets(str, 100, afp);
         str[strlen(str)-1]='\0';
 
-        strcpy(state, "\t");
-        strcpy(mnem, "\t");
-        strcpy(addr, "\t");
+        strcpy(state, " ");
+        strcpy(mnem, " ");
+        strcpy(addr, " ");
 
         split=asmSplit(str, state, mnem, addr);
 
@@ -702,6 +702,7 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
         ptr=strtok(NULL," ");
 
         if(ptr!=NULL){
+            strcat(addr, " ");
             strcat(addr, ptr);
         }
 
@@ -779,9 +780,9 @@ int lstObjMake(char file[30]){
     FILE* obj;
     hash* op;
     assem* point=Ast->link;
-    char ojcode[10]="\0"; // real object code
+    char ojcode[10]; // real object code
     char name[20];
-    char objLine[100]="\0"; // for print T000000 object file
+    char objLine[100]; // for print T000000 object file
     int objStart=0; // start address in object file
     int objCount=0; // for better view of object file
     int line=5;
@@ -812,13 +813,13 @@ int lstObjMake(char file[30]){
         }
 
         if(strcmp(point->mnem, "END")==0){
-            fprintf(lst,"%d\t\t\t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);
+            fprintf(lst,"%d\t\t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);
             // print M in obj file
 
             fprintf(obj, "E%06X\n", Ast->link->loc);
             break;
         }
-        strcpy(ojcode, "\0");
+        strcpy(ojcode, "");
         isOjcode=ojcodeMake(point, ojcode);
 
         if(isOjcode<0){
@@ -828,21 +829,26 @@ int lstObjMake(char file[30]){
         else if(isOjcode==1){
             if(objCount==0){
                 objStart=point->loc;
+            } // find first address of obj file
+            
+            if(strlen(point->addr)<8){
+                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
             }
-
-            fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
+            else{
+                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
+            } // print lst file.
 
             if(objCount>25){
                 objCount+=strlen(ojcode)/2;
                 fprintf(obj,"T%06X%02X",objStart, objCount);
                 fprintf(obj, "%s\n",objLine);
                 objCount=0;
-                strcpy(objLine,"\0");
+                strcpy(objLine,"");
             }
             else{
                 objCount+=strlen(ojcode)/2;
                 strcat(objLine, ojcode);
-            }
+            } // print obj file
         }
         else if(isOjcode==0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
@@ -851,7 +857,7 @@ int lstObjMake(char file[30]){
             fprintf(obj,"T%06X%02X",objStart, objCount);
             fprintf(obj, "%s\n",objLine);
             objCount=0;
-            strcpy(objLine,"\0");
+            strcpy(objLine,"");
         }
         else{
             return line;
