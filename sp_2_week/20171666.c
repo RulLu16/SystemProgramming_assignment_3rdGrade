@@ -491,7 +491,6 @@ void orType(command co, char o[200]){
     if(tfp==NULL){
         printf("Error: there is no such file\n");
         closedir(tdir);
-        fclose(tfp);
         return;
     }
 
@@ -502,7 +501,7 @@ void orType(command co, char o[200]){
     }
 
     fclose(tfp);
-    closedir(tdir);    
+    closedir(tdir);   
 }
 
 void orAssemble(command co, char o[200]){ // for make obj, lst files
@@ -572,7 +571,7 @@ int asmMake(char file[30]){
     char mnem[50];
     char addr[50];
     char str[100];
-    int loc=0;
+    int loc;
     int line=5;
     int split;
     int form;
@@ -601,15 +600,16 @@ int asmMake(char file[30]){
         else if(split<0)
           continue;
         else{
+            if(strcmp(mnem, "START")==0)
+              loc=strtol(addr, NULL, 16);
             form=formSelect(mnem, addr);// find the opcode
         }
-        //printf("%d\n",form);
 
         if(form<0)
           return line; //if no opcode found.
 
         if(split==2 && line>5){ // if there is symbol
-          add=symbolAdd(loc, state);
+                add=symbolAdd(loc, state);
         }
 
         if(add==0)
@@ -779,13 +779,13 @@ int lstObjMake(char file[30]){
     FILE* obj;
     hash* op;
     assem* point=Ast->link;
-    char ojcode[10];
+    char ojcode[10]="\0"; // real object code
     char name[20];
-    char objLine[100]="\0";
-    int objStart=0;
-    int objCount=0;
+    char objLine[100]="\0"; // for print T000000 object file
+    int objStart=0; // start address in object file
+    int objCount=0; // for better view of object file
     int line=5;
-    int isOjcode;
+    int isOjcode; // flag for is there object code
 
     file[strlen(file)-4]='\0';
 
@@ -818,14 +818,14 @@ int lstObjMake(char file[30]){
             fprintf(obj, "E%06X\n", Ast->link->loc);
             break;
         }
-
+        strcpy(ojcode, "\0");
         isOjcode=ojcodeMake(point, ojcode);
 
         if(isOjcode<0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
         }
 
-        else if(isOjcode>0){
+        else if(isOjcode==1){
             if(objCount==0){
                 objStart=point->loc;
             }
@@ -844,7 +844,7 @@ int lstObjMake(char file[30]){
                 strcat(objLine, ojcode);
             }
         }
-        else{
+        else if(isOjcode==0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
 
             objCount+=strlen(ojcode)/2;
@@ -852,6 +852,9 @@ int lstObjMake(char file[30]){
             fprintf(obj, "%s\n",objLine);
             objCount=0;
             strcpy(objLine,"\0");
+        }
+        else{
+            return line;
         }
 
         line+=5;
@@ -864,8 +867,75 @@ int lstObjMake(char file[30]){
 }
 
 int ojcodeMake(assem* point, char oj[10]){
-    strcpy(oj,"000000");
+    hash* opco;
+    symb* symState;
+    int temp;
+    int n, i, x, b, p, e;
+    int bitTable[40];
+    char* ptr;
+
+    if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
+        return 0;
+    }
+    else if(strcmp(point->mnem, "BYTE")==0){
+        if(point->addr[0]=='C'){
+            ptr=strtok(point->addr, "'");
+            ptr=strtok(NULL, "'");
+
+            /* change char to hex*/        
+            
+        }
+        else if(point->addr[0]=='X'){
+            oj=strtok(point->addr, "'");
+            oj=strtok(NULL, "'");            
+        }
+        else
+          strcpy(oj, point->addr);
+
+        return 1;
+    }
+    else if(strcmp(point->mnem, "WORD")==0){
+        strcpy(oj, point->addr);
+        return 1;
+    }
+    else if(strcmp(point->mnem, "BASE")==0){
+        symState=symbolFind(point->addr);
+
+        if(symState==NULL){
+            return 2;
+        }
+
+        base=symState->loc;
+        return -1;
+    } // non-opcode
+    else if(point->state[0]=='.'){
+        return 0;
+    }
+
+    if(point->mnem[0]=='+'){
+
+    }
+    strcpy(oj, "000000");
     return 1;
+
+}
+
+symb* symbolFind(char state[50]){
+    symb* point=sPresent->link;
+
+    while(1){
+        if(point==NULL)
+          break;
+
+        if(strcmp(point->state, state)==0){
+            return point;
+        }
+
+        point=point->link;
+    }
+
+    return NULL;
+
 }
 
 void assembleDelete(){

@@ -48,6 +48,7 @@ His* st;
 His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
+int base=0;
 hash* hTable;
 symb* sPresent;
 symb* sSaved;
@@ -94,7 +95,7 @@ int symbolAdd(int, char[]);
   for pass 2
   ==============================================*/
 int lstObjMake(char []);
-int ojcodeMake(assem*, char[]); // if no oj return -1, no oj and variable return 0, is oj return 1
+int ojcodeMake(assem*, char[]); // if no oj return -1, no oj and variable return 0, is oj return 1, is error return 2
 symb* symbolFind(char[]);
 void assembleDelete();
 void symbolDelete();
