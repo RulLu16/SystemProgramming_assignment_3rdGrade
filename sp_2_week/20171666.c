@@ -848,12 +848,26 @@ int lstObjMake(char file[30]){
             else
               fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t",line, point->loc, point->state, point->mnem, point->addr);
 
-            fprintf(lst,"%X\n",point->ojcode);
+            switch(point->length){
+              case 2:
+                fprintf(lst, "%02X\n",point->ojcode);
+                break;
+              case 4:
+                fprintf(lst, "%04X\n",point->ojcode);
+                break;
+              case 6:
+                fprintf(lst, "%06X\n",point->ojcode);
+                break;
+              case 8:
+                fprintf(lst, "%08X\n",point->ojcode);
+                break;
+            }
         }
 
         point=point->link;
         line+=5;
     }
+    printf("%04X\n",base);
    
     fclose(lst);
     fclose(obj);
@@ -941,6 +955,8 @@ int ojcodeMake(assem* point){
 
     x=b=p=e=0;
     n=i=1;
+    search=strchr(point->addr, ',');
+
     if(point->mnem[0]=='+'){
         fourFlag=1;
       key=point->mnem[1]%20;
@@ -954,19 +970,26 @@ int ojcodeMake(assem* point){
     // find opcode
 
     if(point->addr[0]=='@'){
-        n=1;
+        i=0;
         ptemp=point->addr;
         symState=symbolFind(ptemp+1);
     }
     else if(point->addr[0]=='#'){
-        i=1;
+        n=0;
         ptemp=point->addr;
         symState=symbolFind(ptemp+1);
     }
     else
       symState=symbolFind(point->addr);
 
+    if(search!=NULL && *(search+2)=='X'){
+        x=1;
+        strcpy(ptr, point->addr);
+        search=strchr(ptr, ',');
+        *search='\0';
 
+        symState=symbolFind(ptr);
+    }
 
     if(opco->form[0]=='1'){
         oj=strtol(opco->op, NULL, 16);
@@ -989,6 +1012,43 @@ int ojcodeMake(assem* point){
         return 0;
     }
     else if(fourFlag!=1 && opco->form[0]=='3'){
+        oj=strtol(opco->op, NULL, 16)+n*2+i*1;
+        oj*=0x10;
+
+        if(symState==NULL){
+            if(point->addr[0]=='#'){
+                ptemp=point->addr;
+                if(point->addr[1]=='0')
+                  disp=0;
+                else{
+                    disp=atoi(ptemp+1);
+
+                    if(disp==0) 
+                      return 0;
+                }
+            }
+            else if(point->addr[0]==' '){
+                disp=0;
+            }
+            else
+              return 1;            
+        }
+        else{
+            disp=symState->loc;
+
+            if(disp-point->link->loc>0xfff){
+                b=1;
+                disp-=base;
+            }
+            else{
+                p=1;
+                disp-=point->link->loc;
+            } // take disp
+        }
+
+        oj+=x*8+b*4+p*2+e*1;
+        oj*=0x1000;
+        oj+=disp;
 
         point->ojcode=oj;
         point->length=6;
@@ -998,18 +1058,18 @@ int ojcodeMake(assem* point){
         e=1;
 
         oj=strtol(opco->op, NULL, 16)+n*2+i*1;
-        search=strchr(point->addr, ',');
-
-        if(search!=NULL && *(search+1)=='X'){
-            x=1;
-        } // use x register?
 
         if(symState==NULL){
             if(point->addr[0]=='#'){
                 ptemp=point->addr;
-                disp=atoi(ptemp+1);
-                if(disp==0)
-                  return 0;
+                if(point->addr[1]=='0')
+                  disp=0;
+                else{
+                    disp=atoi(ptemp+1);
+
+                    if(disp==0) 
+                      return 0;
+                }
             }
             else
               return 1;
