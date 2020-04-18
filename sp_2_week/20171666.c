@@ -510,15 +510,15 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
 
     asmError=asmMake(co.first);
 
-    //assem* a=Ast->link;
+    assem* a=Ast->link;
 
     if(asmError<0){
-        /*while(1){
+        while(1){
             if(a==NULL)
               break;
             printf("%04X\t%s\t%s\t%s\n",a->loc, a->state, a->mnem, a->addr);
             a=a->link;
-        }*/
+        }
         objError=lstObjMake(co.first); // make lst and obj files
 
         if(objError>0){ // if there is error in lst and obj file
@@ -593,7 +593,7 @@ int asmMake(char file[30]){
         split=asmSplit(str, state, mnem, addr);
 
         if(split==0){
-            assembleAdd(loc, state, mnem, addr);
+            assembleAdd(loc, 0, state, mnem, addr);
             line+=5;
             continue;
         }
@@ -615,7 +615,7 @@ int asmMake(char file[30]){
         if(add==0)
           return line; // there is same name
 
-        assembleAdd(loc, state, mnem, addr);
+        assembleAdd(loc, form, state, mnem, addr);
         loc+=form;
         line+=5;
     }
@@ -728,10 +728,11 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
     }
 }
 
-void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
+void assembleAdd(int loc, int form, char state[50], char mnem[50], char addr[50]){
     assem* new=(assem*)malloc(sizeof(assem));
 
     new->loc=loc;
+    new->format=form;
     strcpy(new->state, state);
     strcpy(new->mnem, mnem);
     strcpy(new->addr, addr);
@@ -786,6 +787,7 @@ int lstObjMake(char file[30]){
     int objStart=0; // start address in object file
     int line=5;
     int i;
+    int length=0;
     int lineIndex=0;
     int isOjcode; // flag for is there object code
 
@@ -801,7 +803,7 @@ int lstObjMake(char file[30]){
 
     obj=fopen(name,"w"); // to make lst, obj file
 
-    fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc);
+    fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
     fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
     line+=5;
     point=point->link;
@@ -820,8 +822,9 @@ int lstObjMake(char file[30]){
             fprintf(obj, "E%06X\n", Ast->link->loc);
             break;
         }
-        
+        ojcode[0]=-1;        
         isOjcode=ojcodeMake(point, ojcode);
+        length+=point->format*2;
 
         if(isOjcode<0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
@@ -842,7 +845,7 @@ int lstObjMake(char file[30]){
             for(i=0;i<10;i++){
                 if(ojcode[i]<0)
                   break;
-                fprintf(lst,"%1X",ojcode[i]);
+                fprintf(lst,"%0X",ojcode[i]);
                 objLine[lineIndex]=ojcode[i];
                 lineIndex++;
             }
@@ -850,11 +853,11 @@ int lstObjMake(char file[30]){
             objLine[lineIndex]=-1;
 
             if(lineIndex>28){
-                fprintf(obj,"T%06X%02X",objStart, lineIndex-1);
+                fprintf(obj,"T%06X%02X",objStart, length);
                 for(i=0;i<100;i++){
                     if(objLine[i]<0)
                       break;
-                    fprintf(obj,"%01X",objLine[i]);
+                    fprintf(obj,"%0X",objLine[i]);
                 }
                 fprintf(obj,"\n");
                 lineIndex=0;
@@ -864,11 +867,11 @@ int lstObjMake(char file[30]){
         else if(isOjcode==0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
 
-            fprintf(obj,"T%06X%02X",objStart, lineIndex-1);
+            fprintf(obj,"T%06X%02X",objStart, length);
             for(i=0;i<100;i++){
                 if(objLine[i]<0)
                   break;
-                fprintf(obj,"%01X",objLine[i]);
+                fprintf(obj,"%X",objLine[i]);
             }
 
             fprintf(obj,"\n");
@@ -891,34 +894,52 @@ int lstObjMake(char file[30]){
 int ojcodeMake(assem* point, int oj[10]){
     hash* opco;
     symb* symState;
-    int temp;
+    int key;
+    int temp=0;
     int n, i, x, b, p, e;
-    int bitTable[40];
-    char* ptr;
+    int disp;
+    char ptr[30];
+    char* ptemp;
+    char* search;
 
-    /*if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
+    if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
         return 0;
     }
     else if(strcmp(point->mnem, "BYTE")==0){
         if(point->addr[0]=='C'){
-            ptr=strtok(point->addr, "'");
-            ptr=strtok(NULL, "'");
+            temp=2;
 
-             change char to hex     
-            
+            while(1){
+                if(point->addr[temp]=='\'')
+                  break;
+                
+                oj[temp-2]=(int)point->addr[temp];
+                temp++;
+            }
+            oj[temp-2]=-1;
+
         }
         else if(point->addr[0]=='X'){
-            ptr=strtok(point->addr, "'");
-            ptr=strtok(NULL, "'");
-        }
-        else{
-            strcpy(ptr, point->addr);
-        }
+            temp=2;
 
+            while(1){
+                if(point->addr[temp]=='\'')
+                  break;
+
+                ptr[0]=point->addr[temp];
+                ptr[1]='\0';
+
+                oj[temp-2]=strtol(ptr, NULL ,16);
+                temp++;
+            }
+            oj[temp-2]=-1;            
+        }
         return 1;
     }
     else if(strcmp(point->mnem, "WORD")==0){
-        
+
+        oj[0]=atoi(point->addr);
+        oj[1]=-1;
         return 1;
     }
     else if(strcmp(point->mnem, "BASE")==0){
@@ -932,18 +953,104 @@ int ojcodeMake(assem* point, int oj[10]){
         return -1;
     } // non-opcode
     else if(point->state[0]=='.'){
-        return 0;
+        return -1;
     }
 
-    if(point->mnem[0]=='+'){
+    /*============================================
+      for real object code.
+      ============================================*/
 
-    }*/
+    x=b=p=e=0;
+    n=i=1;
+    if(point->format==4){
+      key=point->mnem[1]%20;
+      ptemp=point->mnem;      
+      opco=opcodeFind(hTable[key].link, ptemp+1);
+    }
+    else{
+      key=point->mnem[0]%20;
+      opco=opcodeFind(hTable[key].link, point->mnem);
+    }
 
-    for(int i=0;i<6;i++)
-      oj[i]=0;
-    oj[6]=-1;
-    return 1;
+    if(point->addr[0]=='@'){
+        n=1;
+        ptemp=point->addr;
+        symState=symbolFind(ptemp+1);
+    }
+    else if(point->addr[0]=='#'){
+        i=1;
+        ptemp=point->addr;
+        symState=symbolFind(ptemp+1);
+    }
+    else
+      symState=symbolFind(point->addr);
 
+
+    if(point->format==1){
+        oj[0]=strtol(opco->op, NULL, 16);
+        oj[1]=-1;
+        return 1;
+    }
+    else if(point->format==2){
+        oj[0]=strtol(opco->op, NULL, 16);
+        oj[1]=registerFind(point->addr[0]);
+        oj[2]=0;
+        oj[3]=-1;
+
+        if(point->addr[1]==','){
+            oj[2]=registerFind(point->addr[3]);
+        }        
+        return 1;
+    }
+    else if(point->format==3){
+        return 1;
+    }
+    else if(point->format==4){
+        e=1;
+
+        oj[0]=strtol(opco->op, NULL, 16)+n*2+i*1;
+        search=strchr(point->addr, ',');
+
+        if(search!=NULL && *(search+1)=='X'){
+            x=1;
+        }
+        if(symState==NULL){
+            ptemp=point->addr;
+            disp=atoi(ptemp+1);
+            if(disp==0)
+              return 2;
+        }
+        else{
+            disp=symState->loc;
+        }
+
+        oj[1]=x*8+b*4+p*2+e*1;
+        oj[2]=disp;
+        oj[3]=-1;
+
+        return 1;
+    }
+
+    return 2;
+}
+
+int registerFind(char reg){
+    switch(reg){
+      case 'A':
+        return 0;
+      case 'X':
+        return 1;
+      case 'L':
+        return 2;
+      case 'B':
+        return 3;
+      case 'S':
+        return 4;
+      case 'T':
+        return 5;
+      case 'F':
+        return 6;
+    }
 }
 
 symb* symbolFind(char state[50]){
