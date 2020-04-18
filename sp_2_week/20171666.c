@@ -510,15 +510,15 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
 
     asmError=asmMake(co.first);
 
-    assem* a=Ast->link;
+    //assem* a=Ast->link;
 
     if(asmError<0){
-        while(1){
+        /*while(1){
             if(a==NULL)
               break;
             printf("%04X\t%s\t%s\t%s\n",a->loc, a->state, a->mnem, a->addr);
             a=a->link;
-        }
+        }*/
         objError=lstObjMake(co.first); // make lst and obj files
 
         if(objError>0){ // if there is error in lst and obj file
@@ -780,16 +780,17 @@ int symbolAdd(int loc, char state[50]){
 int lstObjMake(char file[30]){
     FILE* lst;
     FILE* obj;
-    hash* op;
     assem* point=Ast->link;
     char name[20];
-    char objLine[100]; // for print T000000 object file
+    objPrint objLine[50];
+    int objCount=0;
     int objStart=0; // start address in object file
     int line=5;
     int i;
     int length=0;
-    int lineIndex=0;
     int isOjcode; // flag for is there object code
+    int* modify;
+    int modifyCount=0;
 
     file[strlen(file)-4]='\0';
 
@@ -829,7 +830,7 @@ int lstObjMake(char file[30]){
     }
 
     line=5;
-    point=Ast->link;
+    point=Ast->link->link;
     while(1){
         if(strcmp(point->mnem, "END")==0){
             fprintf(lst,"%d\t\t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);
@@ -866,8 +867,63 @@ int lstObjMake(char file[30]){
 
         point=point->link;
         line+=5;
-    }
-    printf("%04X\n",base);
+    } //make lst file
+
+    point=Ast->link;
+    modify=(int*)malloc(sizeof(int)*(line/5));
+    for(i=0;i<line/5;i++)
+      modify[i]=-1;
+
+    while(1){
+        if(strcmp(point->mnem, "END")==0){
+            for(i=0;i<modifyCount;i++){
+                if(modify[i]<0)
+                  break;
+                fprintf(obj,"M%06X%02X\n",modify[i],5);
+            }
+            fprintf(obj,"E%06X\n",Ast->link->loc);
+            break;
+        }
+
+        if(point->length>0){
+            if(length==0)
+              objStart=point->loc;
+            length+=point->length;
+            objLine[objCount].length=point->length;
+            objLine[objCount].ojcode=point->ojcode;
+            objCount++;
+
+            if(length==8){
+                modify[modifyCount]=point->loc;
+                modifyCount++;
+            }
+        }
+
+        if(length>58 || (((strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0)) && length>0)){
+            fprintf(obj, "T%06X%02X",objStart, length);
+            for(i=0;i<objCount;i++){
+                switch(objLine[i].length){
+                  case 2:
+                    fprintf(obj, "%02X",objLine[i].ojcode);
+                    break;
+                  case 4:
+                    fprintf(obj, "%04X", objLine[i].ojcode);
+                    break;
+                  case 6:
+                    fprintf(obj, "%06X", objLine[i].ojcode);
+                    break;
+                  case 8:
+                    fprintf(obj, "%08X", objLine[i].ojcode);
+                    break;
+                }
+            }
+            fprintf(obj,"\n");
+            objCount=0;
+            length=0;
+        }
+        
+        point=point->link;
+    } //make obj file
    
     fclose(lst);
     fclose(obj);
@@ -1040,10 +1096,18 @@ int ojcodeMake(assem* point){
                 b=1;
                 disp-=base;
             }
+            else if(disp-point->link->loc<0 && disp-point->link->loc+4096<0){
+                b=1;
+                disp-=base;
+            }
             else{
                 p=1;
                 disp-=point->link->loc;
             } // take disp
+
+            if(disp<0){
+                disp+=4096;
+            }
         }
 
         oj+=x*8+b*4+p*2+e*1;

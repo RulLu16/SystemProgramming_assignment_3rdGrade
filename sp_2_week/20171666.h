@@ -45,6 +45,11 @@ typedef struct _Symb{
     struct _Symb* link;
 }symb; //struct for symbol table
 
+typedef struct _ObjPrint{
+    int length;
+    int ojcode;
+}objPrint;
+
 // global var, init
 His* st;
 His* ed;
