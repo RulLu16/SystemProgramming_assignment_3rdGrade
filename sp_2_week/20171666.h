@@ -31,7 +31,8 @@ typedef struct _Hash{
 
 typedef struct _Assem{
     int loc;
-    int format;
+    int length;
+    int ojcode;
     char state[50];
     char mnem[50];
     char addr[50];
@@ -89,14 +90,14 @@ void orSymbol();
 int asmMake(char[]); // 0 for no file, integer for error line, -1 for no error
 int formSelect(char[], char[]);
 int asmSplit(char[], char[], char[], char[]);
-void assembleAdd(int, int, char[], char[], char[]);
+void assembleAdd(int, char[], char[], char[]);
 int symbolAdd(int, char[]);
 
 /*==============================================
   for pass 2
   ==============================================*/
 int lstObjMake(char []);
-int ojcodeMake(assem*, int[]); // if no oj return -1, no oj and variable return 0, is oj return 1, is error return 2
+int ojcodeMake(assem*); // error return 1;
 int registerFind(char);
 symb* symbolFind(char[]);
 void assembleDelete();
