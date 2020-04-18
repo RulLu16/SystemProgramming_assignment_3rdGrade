@@ -780,12 +780,13 @@ int lstObjMake(char file[30]){
     FILE* obj;
     hash* op;
     assem* point=Ast->link;
-    char ojcode[10]; // real object code
+    int ojcode[10]; // real object code
     char name[20];
     char objLine[100]; // for print T000000 object file
     int objStart=0; // start address in object file
-    int objCount=0; // for better view of object file
     int line=5;
+    int i;
+    int lineIndex=0;
     int isOjcode; // flag for is there object code
 
     file[strlen(file)-4]='\0';
@@ -819,7 +820,7 @@ int lstObjMake(char file[30]){
             fprintf(obj, "E%06X\n", Ast->link->loc);
             break;
         }
-        strcpy(ojcode, "");
+        
         isOjcode=ojcodeMake(point, ojcode);
 
         if(isOjcode<0){
@@ -827,37 +828,52 @@ int lstObjMake(char file[30]){
         }
 
         else if(isOjcode==1){
-            if(objCount==0){
+            if(lineIndex==0){
                 objStart=point->loc;
             } // find first address of obj file
             
             if(strlen(point->addr)<8){
-                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
+                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t\t",line, point->loc, point->state, point->mnem, point->addr);
             }
             else{
-                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr, ojcode);
+                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t",line, point->loc, point->state, point->mnem, point->addr);
             } // print lst file.
 
-            if(objCount>25){
-                objCount+=strlen(ojcode)/2;
-                fprintf(obj,"T%06X%02X",objStart, objCount);
-                fprintf(obj, "%s\n",objLine);
-                objCount=0;
-                strcpy(objLine,"");
+            for(i=0;i<10;i++){
+                if(ojcode[i]<0)
+                  break;
+                fprintf(lst,"%1X",ojcode[i]);
+                objLine[lineIndex]=ojcode[i];
+                lineIndex++;
             }
-            else{
-                objCount+=strlen(ojcode)/2;
-                strcat(objLine, ojcode);
-            } // print obj file
+            fprintf(lst,"\n"); //print lst file and make objline
+            objLine[lineIndex]=-1;
+
+            if(lineIndex>28){
+                fprintf(obj,"T%06X%02X",objStart, lineIndex-1);
+                for(i=0;i<100;i++){
+                    if(objLine[i]<0)
+                      break;
+                    fprintf(obj,"%01X",objLine[i]);
+                }
+                fprintf(obj,"\n");
+                lineIndex=0;
+                objLine[lineIndex]=-1;
+            }
         }
         else if(isOjcode==0){
             fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
 
-            objCount+=strlen(ojcode)/2;
-            fprintf(obj,"T%06X%02X",objStart, objCount);
-            fprintf(obj, "%s\n",objLine);
-            objCount=0;
-            strcpy(objLine,"");
+            fprintf(obj,"T%06X%02X",objStart, lineIndex-1);
+            for(i=0;i<100;i++){
+                if(objLine[i]<0)
+                  break;
+                fprintf(obj,"%01X",objLine[i]);
+            }
+
+            fprintf(obj,"\n");
+            lineIndex=0;
+            objLine[lineIndex]=-1;
         }
         else{
             return line;
@@ -872,7 +888,7 @@ int lstObjMake(char file[30]){
     return 0;
 }
 
-int ojcodeMake(assem* point, char oj[10]){
+int ojcodeMake(assem* point, int oj[10]){
     hash* opco;
     symb* symState;
     int temp;
@@ -880,7 +896,7 @@ int ojcodeMake(assem* point, char oj[10]){
     int bitTable[40];
     char* ptr;
 
-    if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
+    /*if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
         return 0;
     }
     else if(strcmp(point->mnem, "BYTE")==0){
@@ -888,20 +904,21 @@ int ojcodeMake(assem* point, char oj[10]){
             ptr=strtok(point->addr, "'");
             ptr=strtok(NULL, "'");
 
-            /* change char to hex*/        
+             change char to hex     
             
         }
         else if(point->addr[0]=='X'){
-            oj=strtok(point->addr, "'");
-            oj=strtok(NULL, "'");            
+            ptr=strtok(point->addr, "'");
+            ptr=strtok(NULL, "'");
         }
-        else
-          strcpy(oj, point->addr);
+        else{
+            strcpy(ptr, point->addr);
+        }
 
         return 1;
     }
     else if(strcmp(point->mnem, "WORD")==0){
-        strcpy(oj, point->addr);
+        
         return 1;
     }
     else if(strcmp(point->mnem, "BASE")==0){
@@ -920,8 +937,11 @@ int ojcodeMake(assem* point, char oj[10]){
 
     if(point->mnem[0]=='+'){
 
-    }
-    strcpy(oj, "000000");
+    }*/
+
+    for(int i=0;i<6;i++)
+      oj[i]=0;
+    oj[6]=-1;
     return 1;
 
 }
