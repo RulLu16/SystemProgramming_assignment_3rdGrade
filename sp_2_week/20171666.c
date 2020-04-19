@@ -510,15 +510,7 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
 
     asmError=asmMake(co.first);
 
-    //assem* a=Ast->link;
-
     if(asmError<0){
-        /*while(1){
-            if(a==NULL)
-              break;
-            printf("%04X\t%s\t%s\t%s\n",a->loc, a->state, a->mnem, a->addr);
-            a=a->link;
-        }*/
         objError=lstObjMake(co.first); // make lst and obj files
 
         if(objError>0){ // if there is error in lst and obj file
@@ -545,6 +537,7 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
     printf("Successfully assemble %s\n",co.first);
     sSaved->link=sPresent->link;
     sPresent->link=NULL;
+    assembleDelete();
 }
 
 void orSymbol(){ // for print symbol table
@@ -829,7 +822,7 @@ int lstObjMake(char file[30]){
         line+=5;
     }
 
-    line=5;
+    line=10;
     point=Ast->link->link;
     while(1){
         if(strcmp(point->mnem, "END")==0){
@@ -871,14 +864,29 @@ int lstObjMake(char file[30]){
 
     point=Ast->link;
     modify=(int*)malloc(sizeof(int)*(line/5));
-    for(i=0;i<line/5;i++)
-      modify[i]=-1;
 
     while(1){
         if(strcmp(point->mnem, "END")==0){
+            fprintf(obj, "T%06X%02X",objStart, length/2);
+            for(i=0;i<objCount;i++){
+                switch(objLine[i].length){
+                  case 2:
+                    fprintf(obj, "%02X",objLine[i].ojcode);
+                    break;
+                  case 4:
+                    fprintf(obj, "%04X", objLine[i].ojcode);
+                    break;
+                  case 6:
+                    fprintf(obj, "%06X", objLine[i].ojcode);
+                    break;
+                  case 8:
+                    fprintf(obj, "%08X", objLine[i].ojcode);
+                    break;
+                }
+            }
+            fprintf(obj,"\n");
+
             for(i=0;i<modifyCount;i++){
-                if(modify[i]<0)
-                  break;
                 fprintf(obj,"M%06X%02X\n",modify[i],5);
             }
             fprintf(obj,"E%06X\n",Ast->link->loc);
@@ -892,15 +900,15 @@ int lstObjMake(char file[30]){
             objLine[objCount].length=point->length;
             objLine[objCount].ojcode=point->ojcode;
             objCount++;
-
-            if(length==8){
-                modify[modifyCount]=point->loc;
-                modifyCount++;
-            }
         }
 
-        if(length>58 || (((strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0)) && length>0)){
-            fprintf(obj, "T%06X%02X",objStart, length);
+        if(point->length==8 && point->addr[0]!='#'){
+            modify[modifyCount]=point->loc+1;
+            modifyCount++;
+        }
+
+        if(length>54 || (((strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0)) && length>0)){
+            fprintf(obj, "T%06X%02X",objStart, length/2);
             for(i=0;i<objCount;i++){
                 switch(objLine[i].length){
                   case 2:
@@ -961,7 +969,7 @@ int ojcodeMake(assem* point){
             oj/=0x100;
 
             point->ojcode=oj;
-            point->length=(temp-3)*2;
+            point->length=(temp-2)*2;
 
         }
         else if(point->addr[0]=='X'){
@@ -1194,9 +1202,48 @@ symb* symbolFind(char state[50]){
 }
 
 void assembleDelete(){
+    assem* present=Ast->link;
+    assem* next;
+
+    if(present==NULL)
+      return;
+
+    while(1){
+        next=present->link;
+
+        if(next==NULL){
+            free(present);
+            break;
+        }
+
+        free(present);
+        present=next;
+    }
+
+    Ast->link=NULL;
+    Aed=Ast;
 }
 
 void symbolDelete(){
+    symb* present=sPresent->link;
+    symb* next;
+
+    if(present==NULL)
+      return;
+
+    while(1){
+        next=present->link;
+
+        if(next==NULL){
+            free(present);
+            break;
+        }
+
+        free(present);
+        present=next;
+    }
+
+    sPresent->link=NULL;
 }
 
 int main(){
