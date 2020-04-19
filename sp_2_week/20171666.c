@@ -797,7 +797,7 @@ int lstObjMake(char file[30]){
 
     obj=fopen(name,"w"); // to make lst, obj file
 
-   fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
+    fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
     fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
     line+=5;
     point=point->link;
