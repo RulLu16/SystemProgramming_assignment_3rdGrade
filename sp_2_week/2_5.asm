@@ -24,7 +24,7 @@ BUFFER RESB   4096
 RDREC  CLEAR  X
        CLEAR  A
        CLEAR  S
-       +LDT   #4096
+       +LDT   #RLOOP
 RLOOP  TD     INPUT
        JEQ    RLOOP
        RD     INPUT

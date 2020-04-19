@@ -48,7 +48,7 @@ typedef struct _Symb{
 typedef struct _ObjPrint{
     int length;
     int ojcode;
-}objPrint;
+}objPrint; // struct for obj file print
 
 // global var, init
 His* st;
@@ -104,6 +104,6 @@ int symbolAdd(int, char[]);
 int lstObjMake(char []);
 int ojcodeMake(assem*); // error return 1;
 int registerFind(char);
-symb* symbolFind(char[]);
+symb* symbolFind(char[]); // no symbol then return null
 void assembleDelete();
 void symbolDelete();

@@ -462,9 +462,8 @@ void orOpcodeList(){ //for print opcodelist
     printf("\n");
 }
 
-void orType(command co, char o[200]){
+void orType(command co, char o[200]){ // for print file
     char temp[100];
-    // 디렉토리 판별
     DIR* tdir=NULL;
     struct dirent* tdlist=NULL;
     struct stat tbuf;
@@ -483,7 +482,7 @@ void orType(command co, char o[200]){
           printf("Error: It is a directory name, not file name\n");
           closedir(tdir);
           return;
-        }
+        } // if the file name is a directory name. print error
     }
 
     tfp=fopen(co.first,"r");
@@ -492,38 +491,39 @@ void orType(command co, char o[200]){
         printf("Error: there is no such file\n");
         closedir(tdir);
         return;
-    }
+    } // if ther is no file
 
     orHistoryAdd(o);
 
     while(fgets(temp, sizeof(temp),tfp)!=NULL){
         printf("%s",temp);
-    }
+    } // print file contents
 
     fclose(tfp);
     closedir(tdir);   
 }
 
-void orAssemble(command co, char o[200]){ // for make obj, lst files
-    int asmError;
-    int objError;
+void orAssemble(command co, char o[200]){ // for assemble filename
+    int asmError; // activate when error occurs in symbol and assemble file
+    int objError; // activate when error occurs in makeing object code
 
-    asmError=asmMake(co.first);
+    asmError=asmMake(co.first); 
+    // make asm linked list and symbol linked list
 
     if(asmError<0){
         objError=lstObjMake(co.first); // make lst and obj files
 
         if(objError>0){ // if there is error in lst and obj file
             printf("Assemble Error at %d line.\n",objError);
-            assembleDelete();
-            symbolDelete();
+            assembleDelete(); // init assemble linked list
+            symbolDelete(); // init symbol table
             return;
         }
       }
 
     else{
         if(asmError==0){
-          return;
+          return; // error: there is no such file
         }
         else{
             printf("Assemble Error at %d line.\n",asmError);
@@ -535,8 +535,9 @@ void orAssemble(command co, char o[200]){ // for make obj, lst files
 
     orHistoryAdd(o);
     printf("Successfully assemble %s\n",co.first);
-    sSaved->link=sPresent->link;
-    sPresent->link=NULL;
+
+    sSaved->link=sPresent->link; // save symbol table in 'sSaved' linked list
+    sPresent->link=NULL; // init the sPresent
     assembleDelete();
 }
 
@@ -546,7 +547,7 @@ void orSymbol(){ // for print symbol table
     if(point==NULL){
         printf("There's no symbol table. Please assemble first\n");
         return;
-    }
+    } // there is no symbol table
 
     while(1){
         printf("\t%s\t%04X\n",point->state, point->loc);
@@ -555,10 +556,17 @@ void orSymbol(){ // for print symbol table
 
         if(point==NULL)
           break;
-    }
+    } // print symbol table
 }
 
-int asmMake(char file[30]){
+/*==================================================================
+  for pass 1
+  ==================================================================*/
+
+int asmMake(char file[30]){ 
+    // for make assemble linked list and symbol linked list. 
+    //if error occurs, return error line
+
     FILE* afp=fopen(file, "r");
     char state[50];
     char mnem[50];
@@ -573,30 +581,32 @@ int asmMake(char file[30]){
     if(afp==NULL){
         printf("Error: there's no such file\n");
         return 0;
-    }
+    } // there is no file in present directory
 
     while(!feof(afp)){
-        fgets(str, 100, afp);
+        fgets(str, 100, afp); // get one line in asm file
         str[strlen(str)-1]='\0';
 
         strcpy(state, " ");
         strcpy(mnem, " ");
-        strcpy(addr, " ");
+        strcpy(addr, " "); // init state, mnem, addr
 
-        split=asmSplit(str, state, mnem, addr);
+        split=asmSplit(str, state, mnem, addr); // split the one line
 
         if(split==0){
             assembleAdd(loc, state, mnem, addr);
             line+=5;
             continue;
-        }
+        } // if the line is just comment
         else if(split<0)
-          continue;
+          continue; // if the line is empty line
         else{
             if(strcmp(mnem, "START")==0)
               loc=strtol(addr, NULL, 16);
+              // if it is start line, set the start location
+
             form=formSelect(mnem, addr);// find the opcode
-        }
+        } //normal line
 
         if(form<0)
           return line; //if no opcode found.
@@ -606,9 +616,9 @@ int asmMake(char file[30]){
         }
 
         if(add==0)
-          return line; // there is same name
+          return line; // if there is same name, error.
 
-        assembleAdd(loc, state, mnem, addr);
+        assembleAdd(loc, state, mnem, addr); // add to assemble list
         loc+=form;
         line+=5;
     }
@@ -617,27 +627,29 @@ int asmMake(char file[30]){
     return -1;
 }
 
-int formSelect(char mnem[50], char addr[50]){
+int formSelect(char mnem[50], char addr[50]){ 
+    // for find format for calculate location counter
+
     hash* find;
     int length=2;
 
     if(mnem[0]=='+')
-      return 4;
+      return 4; // format 4
 
-    find=opcodeFind(hTable[(int)mnem[0]%20].link, mnem);
+    find=opcodeFind(hTable[(int)mnem[0]%20].link, mnem); 
 
-    if(find==NULL){
+    if(find==NULL){ // no opcode in hash table
         if(strcmp(mnem, "BASE")==0){
             return 0;
-        }
-        else if(strcmp(mnem, "BYTE")==0){
+        } // mnemonic is BASE
+        else if(strcmp(mnem, "BYTE")==0){ // byte constant
             if(addr[0]=='C'){
                 return strlen(addr)-3;
-            }
+            } // if it is char type byte constant
             else if(addr[0]=='X'){
                 length=strlen(addr)-3;
                 return length/2+length%2;
-            }
+            } // if it is hex type byte constant
             else{
                 return -1;
             }
@@ -645,19 +657,19 @@ int formSelect(char mnem[50], char addr[50]){
         }
         else if(strcmp(mnem, "WORD")==0){
             return 3;
-        }
+        } // word constant
         else if(strcmp(mnem, "RESB")==0){
             return atoi(addr);
-        }
+        } // byte variable
         else if(strcmp(mnem, "RESW")==0){
             return atoi(addr)*3;
-        }
+        } // word variable
         else if(strcmp(mnem, "START")==0){
             return 0;
-        }
+        } // start line
         else if(strcmp(mnem, "END")==0){
             return 0;
-        }
+        } // end line
 
         else{
             return -1;
@@ -667,11 +679,13 @@ int formSelect(char mnem[50], char addr[50]){
 
     else{
         return (int)(find->form[0]-48);
-    }
+    } // there is opcode. so return that format
     
 }
 
-int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
+int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){ 
+    // for split the asm file line
+
     char* ptr;
     int i=0;
     char temp=str[0];
@@ -679,9 +693,9 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
     if(temp=='.'){
         strcpy(state, str);
         return 0;
-    }
+    } // comment line
 
-    else if(temp==' '){
+    else if(temp==' '){ // the line that don't have symbol 
         ptr=strtok(str," ");
         if(ptr!=NULL)
           strcpy(mnem, ptr);
@@ -702,7 +716,7 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
         return 1;
     }
 
-    else{
+    else{ // the line that has symbol
         ptr=strtok(str," ");
         if(ptr!=NULL)
           strcpy(state, ptr);
@@ -722,6 +736,8 @@ int asmSplit(char str[100], char state[50], char mnem[50], char addr[50]){
 }
 
 void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
+    // for add new node to assemble table
+
     assem* new=(assem*)malloc(sizeof(assem));
 
     new->loc=loc;
@@ -729,60 +745,66 @@ void assembleAdd(int loc, char state[50], char mnem[50], char addr[50]){
     new->ojcode=0;
     strcpy(new->state, state);
     strcpy(new->mnem, mnem);
-    strcpy(new->addr, addr);
+    strcpy(new->addr, addr); // make new node and insert data
     
     new->link=Aed->link;
     Aed->link=new;
-    Aed=new; //link to the history list
+    Aed=new; //link to assemble list
 }
 
 int symbolAdd(int loc, char state[50]){
+    // for add new node to symbol table
+
     symb* new=(symb*)malloc(sizeof(symb));
     symb* point=sPresent;
     int flag;
 
     new->loc=loc;
-    strcpy(new->state, state);
+    strcpy(new->state, state); // make new node and insert data
 
     while(1){
         if(point->link==NULL){
             new->link=point->link;
             point->link=new;
             break;
-        }
+        } // reach to the end of symbol list
 
-        flag=strcmp(point->link->state, new->state);
+        flag=strcmp(point->link->state, new->state); // if there is a node that has same name
 
-        if(flag==0){
+        if(flag==0){ // is same name, return error
             free(new);
             return 0;
         }
         else if(flag<0){
             point=point->link;
-        }
+        } // new is bigger than present, move to the next link
         else{
             new->link=point->link;
             point->link=new;
             break;
-        }
-    }
+        } // new is smaller, link to that position
+    } // for link new node to symbol list in ascending order by using insert sort
 
     return 1;
 }
+
+/*===========================================================
+  for pass 2
+  ===========================================================*/
 
 int lstObjMake(char file[30]){
     FILE* lst;
     FILE* obj;
     assem* point=Ast->link;
-    char name[20];
-    objPrint objLine[50];
+    objPrint objLine[50]; // array for obj T line
+    char name[50];
+    int i;
     int objCount=0;
     int objStart=0; // start address in object file
     int line=5;
-    int i;
     int length=0;
     int isOjcode; // flag for is there object code
-    int* modify;
+    int* modify; // array for obj M line
     int modifyCount=0;
 
     file[strlen(file)-4]='\0';
@@ -790,15 +812,17 @@ int lstObjMake(char file[30]){
     strcpy(name, file);
     strcat(name, ".lst");
 
-    lst=fopen(name,"w");
+    lst=fopen(name,"w"); // open lst file
     
     strcpy(name, file);
     strcat(name, ".obj");
 
-    obj=fopen(name,"w"); // to make lst, obj file
+    obj=fopen(name,"w"); // open obj file
 
     fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
     fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
+    // print first line of lst, obj file
+
     line+=5;
     point=point->link;
 
@@ -806,21 +830,21 @@ int lstObjMake(char file[30]){
         if(point==NULL){
             printf("Error: there is no END\n");
             return line;
-        }
+        } // ther is no end line in asm file
 
         if(strcmp(point->mnem, "END")==0){
             break;
         }
         // end state
 
-        isOjcode=ojcodeMake(point);
+        isOjcode=ojcodeMake(point); // make object code
 
         if(isOjcode==1)
-          return line;
+          return line; // error occurs in making object code
 
         point=point->link;
         line+=5;
-    }
+    } // make object code in each line
 
     line=10;
     point=Ast->link->link;
@@ -828,19 +852,21 @@ int lstObjMake(char file[30]){
         if(strcmp(point->mnem, "END")==0){
             fprintf(lst,"%d\t\t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);
             break;
-        }
+        } // end line
 
-        if(point->length==0){
+        if(point->length==0){ // if there is no object code
             if(strcmp(point->mnem, "BASE")==0 || point->state[0]=='.')
               fprintf(lst,"%d\t \t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);
+            // base or comment line. so don't need to print loc
             else
               fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line,point->loc, point->state, point->mnem, point->addr);
         }
         else{
-            if(strlen(point->addr)<8)
+            if(strlen(point->addr)<8) // addr length is not over 8, which are tab size
                fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t\t",line, point->loc, point->state, point->mnem, point->addr);
             else
               fprintf(lst,"%d\t%04X\t%s\t%s\t%s\t",line, point->loc, point->state, point->mnem, point->addr);
+            // print line, loc, state, mnem, addr
 
             switch(point->length){
               case 2:
@@ -855,7 +881,7 @@ int lstObjMake(char file[30]){
               case 8:
                 fprintf(lst, "%08X\n",point->ojcode);
                 break;
-            }
+            } // print object code in lst file
         }
 
         point=point->link;
@@ -863,10 +889,10 @@ int lstObjMake(char file[30]){
     } //make lst file
 
     point=Ast->link;
-    modify=(int*)malloc(sizeof(int)*(line/5));
+    modify=(int*)malloc(sizeof(int)*(line/5)); // malloc the modify array
 
     while(1){
-        if(strcmp(point->mnem, "END")==0){
+        if(strcmp(point->mnem, "END")==0){ // meet the end line
             fprintf(obj, "T%06X%02X",objStart, length/2);
             for(i=0;i<objCount;i++){
                 switch(objLine[i].length){
@@ -883,13 +909,14 @@ int lstObjMake(char file[30]){
                     fprintf(obj, "%08X", objLine[i].ojcode);
                     break;
                 }
-            }
+            } // print object code before reach the end line
             fprintf(obj,"\n");
 
             for(i=0;i<modifyCount;i++){
                 fprintf(obj,"M%06X%02X\n",modify[i],5);
-            }
-            fprintf(obj,"E%06X\n",Ast->link->loc);
+            } // print M(modify) line in obj file
+
+            fprintf(obj,"E%06X\n",Ast->link->loc); // print end line in obj
             break;
         }
 
@@ -900,14 +927,25 @@ int lstObjMake(char file[30]){
             objLine[objCount].length=point->length;
             objLine[objCount].ojcode=point->ojcode;
             objCount++;
-        }
+        } // if there is object code, add to the objLine array
 
-        if(point->length==8 && point->addr[0]!='#'){
-            modify[modifyCount]=point->loc+1;
-            modifyCount++;
-        }
+        if(point->length==8){
+            if(point->addr[0]=='#'){
+                if(point->addr[1]<48 || point->addr[1]>57){
+                    modify[modifyCount]=point->loc+1;
+                    modifyCount++;
+                } // if #symbol_name. not #decimal_number
+            }
+            else{
+                modify[modifyCount]=point->loc+1;
+                modifyCount++;
+            }
+        } // if there is 4 format object code, so need to modify, add to modify array
 
         if(length>54 || (((strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0)) && length>0)){
+            // if objLine size is over the certain length, or meets the
+            // variable line, print obj one line in obj file
+
             fprintf(obj, "T%06X%02X",objStart, length/2);
             for(i=0;i<objCount;i++){
                 switch(objLine[i].length){
@@ -953,9 +991,9 @@ int ojcodeMake(assem* point){
 
     if(strcmp(point->mnem, "RESB")==0 || strcmp(point->mnem, "RESW")==0){
         return 0;
-    }
-    else if(strcmp(point->mnem, "BYTE")==0){
-        if(point->addr[0]=='C'){
+    } // it is byte or word variable.
+    else if(strcmp(point->mnem, "BYTE")==0){ // it is byte constant
+        if(point->addr[0]=='C'){ // char type constant
             temp=2;
 
             while(1){
@@ -965,14 +1003,14 @@ int ojcodeMake(assem* point){
                 oj+=(int)point->addr[temp];
                 oj*=0x100;
                 temp++;
-            }
-            oj/=0x100;
+            } // get Ascii code of C'__'
 
+            oj/=0x100;
             point->ojcode=oj;
-            point->length=(temp-2)*2;
+            point->length=(temp-2)*2; 
 
         }
-        else if(point->addr[0]=='X'){
+        else if(point->addr[0]=='X'){ // hex type constant
             temp=2;
 
             while(1){
@@ -985,48 +1023,48 @@ int ojcodeMake(assem* point){
                 oj+=strtol(ptr, NULL ,16);
                 oj*=0x10;
                 temp++;
-            }
+            } // get decimal number of X'__'
+
             oj/=0x10;  
             point->ojcode=oj;
             point->length=((temp-3)/2+(temp-3)%2)*2;
         }
         return 0;
     }
-    else if(strcmp(point->mnem, "WORD")==0){
-
+    else if(strcmp(point->mnem, "WORD")==0){ // word constant
         oj=atoi(point->addr);
         point->ojcode=oj;
-        point->length=strlen(point->addr);
+        point->length=strlen(point->addr); // just get decimal number
         return 0;
     }
-    else if(strcmp(point->mnem, "BASE")==0){
+    else if(strcmp(point->mnem, "BASE")==0){ // BASE for user message
         symState=symbolFind(point->addr);
 
         if(symState==NULL){
             return 1;
-        }
+        } // no addr symbol, error
 
-        base=symState->loc;
+        base=symState->loc; // set base register
         return 0;
-    } // non-opcode
+    } 
     else if(point->state[0]=='.'){
         return 0;
-    }
+    } // comments line
 
     /*============================================
       for real object code.
       ============================================*/
 
     x=b=p=e=0;
-    n=i=1;
-    search=strchr(point->addr, ',');
+    n=i=1; // init nixbpe
+    search=strchr(point->addr, ','); // if there is a, b format addr
 
     if(point->mnem[0]=='+'){
         fourFlag=1;
       key=point->mnem[1]%20;
       ptemp=point->mnem;      
       opco=opcodeFind(hTable[key].link, ptemp+1);
-    }
+    } // + in mnem so it is 4 format. set flag and find opcode
     else{
       key=point->mnem[0]%20;
       opco=opcodeFind(hTable[key].link, point->mnem);
@@ -1037,12 +1075,12 @@ int ojcodeMake(assem* point){
         i=0;
         ptemp=point->addr;
         symState=symbolFind(ptemp+1);
-    }
+    } // indirect addressing
     else if(point->addr[0]=='#'){
         n=0;
         ptemp=point->addr;
         symState=symbolFind(ptemp+1);
-    }
+    } // immediate addressing
     else
       symState=symbolFind(point->addr);
 
@@ -1053,21 +1091,21 @@ int ojcodeMake(assem* point){
         *search='\0';
 
         symState=symbolFind(ptr);
-    }
+    } // if use X register
 
-    if(opco->form[0]=='1'){
+    if(opco->form[0]=='1'){ // format 1
         oj=strtol(opco->op, NULL, 16);
         point->ojcode=oj;
         point->length=2;
         return 0;
     }
-    else if(opco->form[0]=='2'){
+    else if(opco->form[0]=='2'){ // format 2
         oj=strtol(opco->op, NULL, 16);
         oj*=0x10;
-        oj+=registerFind(point->addr[0]);
+        oj+=registerFind(point->addr[0]); // get register number
         oj*=0x10;
 
-        if(point->addr[1]==','){
+        if(point->addr[1]==','){ // if there is second register
             oj+=registerFind(point->addr[3]);
         }        
 
@@ -1075,27 +1113,27 @@ int ojcodeMake(assem* point){
         point->length=4;
         return 0;
     }
-    else if(fourFlag!=1 && opco->form[0]=='3'){
-        oj=strtol(opco->op, NULL, 16)+n*2+i*1;
+    else if(fourFlag!=1 && opco->form[0]=='3'){ // format 3
+        oj=strtol(opco->op, NULL, 16)+n*2+i*1; // get opcode and n, i
         oj*=0x10;
 
-        if(symState==NULL){
-            if(point->addr[0]=='#'){
+        if(symState==NULL){ // if can't find symbol loc
+            if(point->addr[0]=='#'){ // immediate addressing
                 ptemp=point->addr;
                 if(point->addr[1]=='0')
-                  disp=0;
+                  disp=0; // if it is #0
                 else{
-                    disp=atoi(ptemp+1);
+                    disp=atoi(ptemp+1); // if it is #decimal_number
 
                     if(disp==0) 
-                      return 0;
+                      return 1; // else no symbol loc, error
                 }
             }
             else if(point->addr[0]==' '){
                 disp=0;
-            }
+            } // no addr
             else
-              return 1;            
+              return 1; // can't find symbol loc, error        
         }
         else{
             disp=symState->loc;
@@ -1103,11 +1141,11 @@ int ojcodeMake(assem* point){
             if(disp-point->link->loc>0xfff){
                 b=1;
                 disp-=base;
-            }
+            } // over the disp range
             else if(disp-point->link->loc<0 && disp-point->link->loc+4096<0){
                 b=1;
                 disp-=base;
-            }
+            } // over the disp range
             else{
                 p=1;
                 disp-=point->link->loc;
@@ -1115,7 +1153,7 @@ int ojcodeMake(assem* point){
 
             if(disp<0){
                 disp+=4096;
-            }
+            } // 2's complement 
         }
 
         oj+=x*8+b*4+p*2+e*1;
@@ -1126,25 +1164,25 @@ int ojcodeMake(assem* point){
         point->length=6;
         return 0;
     }
-    else if(fourFlag==1){
+    else if(fourFlag==1){ // format 4
         e=1;
 
-        oj=strtol(opco->op, NULL, 16)+n*2+i*1;
+        oj=strtol(opco->op, NULL, 16)+n*2+i*1; // get opcode and n, i
 
         if(symState==NULL){
-            if(point->addr[0]=='#'){
+            if(point->addr[0]=='#'){ // immediate addressing
                 ptemp=point->addr;
-                if(point->addr[1]=='0')
+                if(point->addr[1]=='0') // #0
                   disp=0;
                 else{
-                    disp=atoi(ptemp+1);
+                    disp=atoi(ptemp+1); //#decimal_number
 
                     if(disp==0) 
-                      return 0;
+                      return 1; // can't find symbol, error
                 }
             }
             else
-              return 1;
+              return 1; // no symbol, error
         }
         else{
             disp=symState->loc;
@@ -1164,7 +1202,7 @@ int ojcodeMake(assem* point){
     return 1;
 }
 
-int registerFind(char reg){
+int registerFind(char reg){ // for get register number
     switch(reg){
       case 'A':
         return 0;
@@ -1183,7 +1221,7 @@ int registerFind(char reg){
     }
 }
 
-symb* symbolFind(char state[50]){
+symb* symbolFind(char state[50]){ // for find symbol loc
     symb* point=sPresent->link;
 
     while(1){
@@ -1192,16 +1230,16 @@ symb* symbolFind(char state[50]){
 
         if(strcmp(point->state, state)==0){
             return point;
-        }
+        } // find symbol
 
         point=point->link;
     }
 
-    return NULL;
+    return NULL; // else return NULL
 
 }
 
-void assembleDelete(){
+void assembleDelete(){ // for delete assemble list
     assem* present=Ast->link;
     assem* next;
 
@@ -1218,13 +1256,13 @@ void assembleDelete(){
 
         free(present);
         present=next;
-    }
+    } // free the assemble list
 
     Ast->link=NULL;
-    Aed=Ast;
+    Aed=Ast; // init the assemble list
 }
 
-void symbolDelete(){
+void symbolDelete(){ // for delete symbol list
     symb* present=sPresent->link;
     symb* next;
 
@@ -1241,9 +1279,9 @@ void symbolDelete(){
 
         free(present);
         present=next;
-    }
+    } // free the symbol list
 
-    sPresent->link=NULL;
+    sPresent->link=NULL; // init the sPresent symbol list
 }
 
 int main(){
@@ -1318,13 +1356,13 @@ int main(){
           orHistoryAdd(savein);
           orOpcodeList();
       }
-      else if(strcmp(co.order,"type")==0){
+      else if(strcmp(co.order,"type")==0){ // if command is type
           orType(co, savein);
       }
-      else if(strcmp(co.order,"assemble")==0){
+      else if(strcmp(co.order,"assemble")==0){ // if command is assemble
           orAssemble(co, savein);
       }
-      else if(strcmp(co.order,"symbol")==0){
+      else if(strcmp(co.order,"symbol")==0){ // if command is symbol
           orHistoryAdd(savein);
           orSymbol();
       }
