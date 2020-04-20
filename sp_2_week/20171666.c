@@ -426,7 +426,6 @@ hash* opcodeFind(hash* point, char op[50]){
           break;
 
         if(strcmp(point->mnem,op)==0){ // if mnemonic is match to the hash table
-            //result=(int)strtol(point->op, NULL, 16);
             return point;
         }
 
