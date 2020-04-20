@@ -1025,14 +1025,14 @@ int ojcodeMake(assem* point){
 
             oj/=0x10;  
             point->ojcode=oj;
-            point->length=((temp-3)/2+(temp-3)%2)*2;
+            point->length=((temp-2)/2+(temp-2)%2)*2;
         }
         return 0;
     }
     else if(strcmp(point->mnem, "WORD")==0){ // word constant
         oj=atoi(point->addr);
         point->ojcode=oj;
-        point->length=strlen(point->addr); // just get decimal number
+        point->length=6; // just get decimal number
         return 0;
     }
     else if(strcmp(point->mnem, "BASE")==0){ // BASE for user message
