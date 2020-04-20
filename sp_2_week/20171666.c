@@ -795,38 +795,19 @@ int symbolAdd(int loc, char state[50]){
 int lstObjMake(char file[30]){
     FILE* lst;
     FILE* obj;
-    assem* point=Ast->link;
+    assem* point=Ast->link->link;
     objPrint objLine[50]; // array for obj T line
     char name[50];
     int i;
     int objCount=0;
     int objStart=0; // start address in object file
-    int line=5;
+    int line=10;
     int length=0;
     int isOjcode; // flag for is there object code
     int* modify; // array for obj M line
     int modifyCount=0;
 
-    file[strlen(file)-4]='\0';
-
-    strcpy(name, file);
-    strcat(name, ".lst");
-
-    lst=fopen(name,"w"); // open lst file
-    
-    strcpy(name, file);
-    strcat(name, ".obj");
-
-    obj=fopen(name,"w"); // open obj file
-
-    fprintf(obj, "H%s\t%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
-    fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
-    // print first line of lst, obj file
-
-    line+=5;
-    point=point->link;
-
-    while(1){
+    while(1){ // make object code in each line.
         if(point==NULL){
             printf("Error: there is no END\n");
             return line;
@@ -844,10 +825,28 @@ int lstObjMake(char file[30]){
 
         point=point->link;
         line+=5;
-    } // make object code in each line
+    } 
 
-    line=10;
-    point=Ast->link->link;
+    line=5;
+    point=Ast->link;
+    file[strlen(file)-4]='\0';
+
+    strcpy(name, file);
+    strcat(name, ".lst");
+
+    lst=fopen(name,"w"); // open lst file
+    
+    strcpy(name, file);
+    strcat(name, ".obj");
+
+    obj=fopen(name,"w"); // open obj file
+
+    fprintf(obj, "H%-6s%06X%06X\n",Ast->link->state, Ast->link->loc, Aed->loc-Ast->link->loc);
+    fprintf(lst,"%d\t%04X\t%s\t%s\t%s\n",line, point->loc, point->state, point->mnem, point->addr);
+    // print first line of lst, obj file
+    
+    line+=5;
+    point=point->link;
     while(1){
         if(strcmp(point->mnem, "END")==0){
             fprintf(lst,"%d\t\t%s\t%s\t%s\n",line, point->state, point->mnem, point->addr);

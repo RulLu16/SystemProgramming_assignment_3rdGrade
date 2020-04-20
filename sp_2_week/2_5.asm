@@ -1,4 +1,4 @@
-COPY   START  F
+COPY   START  0
 FIRST  STL    RETADR
        LDB    #LENGTH
        BASE   LENGTH
@@ -24,7 +24,7 @@ BUFFER RESB   4096
 RDREC  CLEAR  X
        CLEAR  A
        CLEAR  S
-       +LDT   #RLOOP
+       +LDT   #4096
 RLOOP  TD     INPUT
        JEQ    RLOOP
        RD     INPUT
