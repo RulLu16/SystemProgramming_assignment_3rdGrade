@@ -1136,11 +1136,11 @@ int ojcodeMake(assem* point){
         else{
             disp=symState->loc;
 
-            if(disp-point->link->loc>0xfff){
+            if(disp-point->link->loc>2047){
                 b=1;
                 disp-=base;
             } // over the disp range
-            else if(disp-point->link->loc<0 && disp-point->link->loc+4096<0){
+            else if(disp-point->link->loc< -2048 /*&& disp-point->link->loc+4096<0*/){
                 b=1;
                 disp-=base;
             } // over the disp range
