@@ -56,6 +56,7 @@ His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
 int base=0;
+int program_address=0;
 hash* hTable;
 symb* sPresent;
 symb* sSaved;
@@ -107,3 +108,8 @@ int registerFind(char);
 symb* symbolFind(char[]); // no symbol then return null
 void assembleDelete();
 void symbolDelete();
+
+/*==============================================
+  project 3
+  ==============================================*/
+void orProgAddr(command);

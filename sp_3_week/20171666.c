@@ -1282,6 +1282,11 @@ void symbolDelete(){ // for delete symbol list
     sPresent->link=NULL; // init the sPresent symbol list
 }
 
+void orProgAddr(command co){
+    program_address=strtol(co.first, NULL, 16);
+    printf("%04X\n",program_address);
+}
+
 int main(){
   int i,j;
   char input[200];
@@ -1364,7 +1369,16 @@ int main(){
           orHistoryAdd(savein);
           orSymbol();
       }
-
+      else if(strcmp(co.order,"progaddr")==0){
+          orHistoryAdd(savein);
+          orProgAddr(co);
+      }
+      else if(strcmp(co.order,"loader")==0){
+      }
+      else if(strcmp(co.order,"bp")==0){
+      }
+      else if(strcmp(co.order,"run")==0){
+      }
       else{ // undefined command 
           printf("Error: wrong command\n");
       }
