@@ -57,6 +57,7 @@ unsigned char memory[65536][16]={0,};
 int duAddr=0;
 int base=0;
 int program_address=0;
+int program_length=0;
 hash* hTable;
 symb* sPresent;
 symb* sSaved;
@@ -113,3 +114,5 @@ void symbolDelete();
   project 3
   ==============================================*/
 void orProgAddr(command);
+void orBp(command, char[]);
+

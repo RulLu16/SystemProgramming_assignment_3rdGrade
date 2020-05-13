@@ -1287,6 +1287,31 @@ void orProgAddr(command co){
     printf("%04X\n",program_address);
 }
 
+void orBp(command co, char o[200]){
+    int position=0;
+
+    if(strcmp(co.first, "-")==0){
+        // print bp position
+        printf("nothing\n");
+        orHistoryAdd(o);
+    }
+    else if(strcmp(co.first, "clear")==0){
+        printf("clear\n");
+        orHistoryAdd(o);
+    }
+    else{
+       position=strtol(co.first, NULL, 16);
+       if(position<program_length){
+           // put bp in bp array or list
+           orHistoryAdd(o);
+       }
+       else{
+           printf("Error: wrong address.\n");
+           return;
+       }
+    }
+}
+
 int main(){
   int i,j;
   char input[200];
@@ -1376,6 +1401,7 @@ int main(){
       else if(strcmp(co.order,"loader")==0){
       }
       else if(strcmp(co.order,"bp")==0){
+          orBp(co, savein);
       }
       else if(strcmp(co.order,"run")==0){
       }
