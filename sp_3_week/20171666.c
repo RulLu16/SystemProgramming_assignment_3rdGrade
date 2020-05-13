@@ -1282,12 +1282,11 @@ void symbolDelete(){ // for delete symbol list
     sPresent->link=NULL; // init the sPresent symbol list
 }
 
-void orProgAddr(command co){
+void orProgAddr(command co){ // for set program start point
     program_address=strtol(co.first, NULL, 16);
-    printf("%04X\n",program_address);
 }
 
-void orBp(command co, char o[200]){
+void orBp(command co, char o[200]){ // for set break point to debug
     int position=0;
 
     if(strcmp(co.first, "-")==0){
@@ -1394,20 +1393,19 @@ int main(){
           orHistoryAdd(savein);
           orSymbol();
       }
-      else if(strcmp(co.order,"progaddr")==0){
+      else if(strcmp(co.order,"progaddr")==0){ // if command is progaddr
           orHistoryAdd(savein);
           orProgAddr(co);
       }
-      else if(strcmp(co.order,"loader")==0){
+      else if(strcmp(co.order,"loader")==0){ // if command is loader
       }
-      else if(strcmp(co.order,"bp")==0){
+      else if(strcmp(co.order,"bp")==0){ // if command is bp
           orBp(co, savein);
       }
-      else if(strcmp(co.order,"run")==0){
+      else if(strcmp(co.order,"run")==0){ // if command is run
       }
       else{ // undefined command 
           printf("Error: wrong command\n");
       }
-      
   }
 }
