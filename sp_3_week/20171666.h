@@ -58,11 +58,14 @@ int duAddr=0;
 int base=0;
 int program_address=0;
 int program_length=0;
+int errorDetect=0;
 hash* hTable;
 symb* sPresent;
-symb* sSaved;
+symb* sSaved; // symb list for assemble file
 assem* Ast;
 assem* Aed;
+
+symb* linkingSymbol;
 
 //functions
 
@@ -106,13 +109,15 @@ int symbolAdd(int, char[]);
 int lstObjMake(char []);
 int ojcodeMake(assem*); // error return 1;
 int registerFind(char);
-symb* symbolFind(char[]); // no symbol then return null
+symb* symbolFind(char[], symb*); // no symbol then return null
 void assembleDelete();
-void symbolDelete();
+void symbolDelete(symb*);
 
 /*==============================================
   project 3
   ==============================================*/
 void orProgAddr(command);
+void orLoader(command, char[]);
+void makeLinkSymb(char[]);
 void orBp(command, char[]);
 

@@ -515,7 +515,7 @@ void orAssemble(command co, char o[200]){ // for assemble filename
         if(objError>0){ // if there is error in lst and obj file
             printf("Assemble Error at %d line.\n",objError);
             assembleDelete(); // init assemble linked list
-            symbolDelete(); // init symbol table
+            symbolDelete(sPresent); // init symbol table
             return;
         }
       }
@@ -527,7 +527,7 @@ void orAssemble(command co, char o[200]){ // for assemble filename
         else{
             printf("Assemble Error at %d line.\n",asmError);
             assembleDelete();
-            symbolDelete();
+            symbolDelete(sPresent);
             return;
         }
     }
@@ -1036,7 +1036,7 @@ int ojcodeMake(assem* point){
         return 0;
     }
     else if(strcmp(point->mnem, "BASE")==0){ // BASE for user message
-        symState=symbolFind(point->addr);
+        symState=symbolFind(point->addr, sPresent);
 
         if(symState==NULL){
             return 1;
@@ -1072,15 +1072,15 @@ int ojcodeMake(assem* point){
     if(point->addr[0]=='@'){
         i=0;
         ptemp=point->addr;
-        symState=symbolFind(ptemp+1);
+        symState=symbolFind(ptemp+1, sPresent);
     } // indirect addressing
     else if(point->addr[0]=='#'){
         n=0;
         ptemp=point->addr;
-        symState=symbolFind(ptemp+1);
+        symState=symbolFind(ptemp+1, sPresent);
     } // immediate addressing
     else
-      symState=symbolFind(point->addr);
+      symState=symbolFind(point->addr, sPresent);
 
     if(search!=NULL && *(search+2)=='X'){
         x=1;
@@ -1088,7 +1088,7 @@ int ojcodeMake(assem* point){
         search=strchr(ptr, ',');
         *search='\0';
 
-        symState=symbolFind(ptr);
+        symState=symbolFind(ptr, sPresent);
     } // if use X register
 
     if(opco->form[0]=='1'){ // format 1
@@ -1219,8 +1219,8 @@ int registerFind(char reg){ // for get register number
     }
 }
 
-symb* symbolFind(char state[50]){ // for find symbol loc
-    symb* point=sPresent->link;
+symb* symbolFind(char state[50], symb* findS){ // for find symbol loc
+    symb* point=findS->link;
 
     while(1){
         if(point==NULL)
@@ -1260,8 +1260,8 @@ void assembleDelete(){ // for delete assemble list
     Aed=Ast; // init the assemble list
 }
 
-void symbolDelete(){ // for delete symbol list
-    symb* present=sPresent->link;
+void symbolDelete(symb* delS){ // for delete symbol list
+    symb* present=delS->link;
     symb* next;
 
     if(present==NULL)
@@ -1279,11 +1279,52 @@ void symbolDelete(){ // for delete symbol list
         present=next;
     } // free the symbol list
 
-    sPresent->link=NULL; // init the sPresent symbol list
+    delS->link=NULL; // init the sPresent symbol list
 }
 
 void orProgAddr(command co){ // for set program start point
     program_address=strtol(co.first, NULL, 16);
+}
+
+void orLoader(command co, char o[200]){
+
+    printf("control\tsymbol\taddress\tlength\n");
+    printf("section\tname\n");
+    printf("--------------------------------\n");
+
+    if(strcmp(co.first,"-")!=0){
+        orHistoryAdd(o);
+        makeLinkSymb(co.first);
+    }
+    else{
+        printf("Error: there is no filename\n");
+        symbolDelete(linkingSymbol);
+        return;
+    }
+
+    if(strcmp(co.second,"-")!=0){
+        makeLinkSymb(co.second);
+    }
+    if(strcmp(co.third,"-")!=0){
+        makeLinkSymb(co.third);
+    }
+
+    if(errorDetect==1){ // if error occurs
+        errorDetect=0;
+        return;
+    }
+}
+
+void makeLinkSymb(char fname[30]){
+    FILE* linkF=fopen(fname,"r");
+
+    if(linkF==NULL){
+        printf("Error: there is no such file\n");
+        errorDetect=1;
+        return;
+    }
+
+
 }
 
 void orBp(command co, char o[200]){ // for set break point to debug
@@ -1331,6 +1372,9 @@ int main(){
   Ast=(assem*)malloc(sizeof(assem));
   Ast->link=NULL;
   Aed=Ast;
+
+  linkingSymbol=(symb*)malloc(sizeof(symb));
+  linkingSymbol->link=NULL;
 
   for(i=0;i<20;i++){
       hTable[i].link=NULL; // init the hash table
@@ -1398,6 +1442,7 @@ int main(){
           orProgAddr(co);
       }
       else if(strcmp(co.order,"loader")==0){ // if command is loader
+          orLoader(co,savein);
       }
       else if(strcmp(co.order,"bp")==0){ // if command is bp
           orBp(co, savein);
