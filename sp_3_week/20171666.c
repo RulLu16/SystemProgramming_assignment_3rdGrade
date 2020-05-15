@@ -497,6 +497,7 @@ void orType(command co, char o[200]){ // for print file
     while(fgets(temp, sizeof(temp),tfp)!=NULL){
         printf("%s",temp);
     } // print file contents
+    printf("\n");
 
     fclose(tfp);
     closedir(tdir);   
@@ -1288,12 +1289,15 @@ void orProgAddr(command co){ // for set program start point
 
 void orLoader(command co, char o[200]){
 
+    /*====================================
+      pass 1
+      ====================================*/
+
     printf("control\tsymbol\taddress\tlength\n");
     printf("section\tname\n");
     printf("--------------------------------\n");
 
     if(strcmp(co.first,"-")!=0){
-        orHistoryAdd(o);
         makeLinkSymb(co.first);
     }
     else{
@@ -1313,18 +1317,127 @@ void orLoader(command co, char o[200]){
         errorDetect=0;
         return;
     }
+    orHistoryAdd(o);
+
+    /*======================================
+      pass 2
+      ======================================*/
+
+    program_length=0;
+    current_length=0;
+    symbolDelete(linkingSymbol);
+
 }
 
 void makeLinkSymb(char fname[30]){
     FILE* linkF=fopen(fname,"r");
+    char temp[200];
 
     if(linkF==NULL){
         printf("Error: there is no such file\n");
         errorDetect=1;
         return;
     }
+    
+    while(!feof(linkF)){
+        fgets(temp, 200, linkF);
 
+        if(temp[0]=='H'){
+            sectionH(temp);
+        }
+        else if(temp[0]=='D'){
+            sectionD(temp);
+        }     
+        else if(temp[0]=='E'){
+            program_length+=current_length;
+        }
+    }
 
+    fclose(linkF);
+    return;
+}
+
+void addLinkSymb(int loc, char state[50]){
+    symb* new=(symb*)malloc(sizeof(symb));
+
+    new->loc=loc;
+    strcpy(new->state, state);
+
+    new->link=linkingSymbol->link;
+    linkingSymbol->link=new;
+
+    return;
+}
+
+void sectionH(char fline[200]){
+    char* sub;
+    char name[50];
+    int location;
+
+    sub=getSubstring(1,6,fline);
+    strcpy(name, sub);
+
+    sub=getSubstring(7,12,fline);
+    location=strtol(sub, NULL, 16);
+    location+=program_length+program_address;
+
+    sub=getSubstring(13,18,fline);
+    current_length=strtol(sub, NULL, 16);
+
+    addLinkSymb(location, name);
+    printf("%s\t\t%04X\t%04X\n",name,location,current_length);
+
+    return;
+}
+
+void sectionD(char fline[200]){
+    char* sub;
+    char name[50];
+    int location;
+    int size=strlen(fline);
+    int index=1;
+
+    while(index<size-1){
+
+      sub=getSubstring(index,index+5,fline);
+      strcpy(name, sub);
+      index+=6;
+
+      sub=getSubstring(index,index+5,fline);
+      location=strtol(sub,NULL, 16);
+      location+=program_address+program_length;
+
+      addLinkSymb(location, name);
+      printf("\t%s\t%04X\n",name,location);
+      index+=6;
+    }
+
+    return;
+}
+
+void sectionR(char fline[200]){
+}
+
+void sectionT(char fline[200]){
+}
+
+void sectionM(char fline[200]){
+}
+
+void sectionE(char fline[200]){
+}
+
+char* getSubstring(int start, int end, char str[200]){
+    char* result=(char*)malloc(sizeof(char)*100);
+    int index=0;
+
+    for(int i=start;i<=end;i++){
+        result[index]=str[i];
+        index++;
+    }
+    result[index]='\0';
+
+    return result;
 }
 
 void orBp(command co, char o[200]){ // for set break point to debug
@@ -1368,7 +1481,7 @@ void printBp(){
     }
 }
 
-void addBp(int position){
+void addBp(int position){ // need to modify. sort?
     breakP* present=bpList;
     breakP* new=(breakP*)malloc(sizeof(breakP));
 
