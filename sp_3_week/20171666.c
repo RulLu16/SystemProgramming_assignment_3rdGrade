@@ -1332,17 +1332,17 @@ void orBp(command co, char o[200]){ // for set break point to debug
 
     if(strcmp(co.first, "-")==0){
         // print bp position
-        printf("nothing\n");
+        printBp();
         orHistoryAdd(o);
     }
     else if(strcmp(co.first, "clear")==0){
-        printf("clear\n");
+        deleteBp();
         orHistoryAdd(o);
     }
     else{
        position=strtol(co.first, NULL, 16);
        if(position<program_length){
-           // put bp in bp array or list
+           addBp(position);
            orHistoryAdd(o);
        }
        else{
@@ -1350,6 +1350,71 @@ void orBp(command co, char o[200]){ // for set break point to debug
            return;
        }
     }
+}
+
+void printBp(){
+    breakP* present=bpList->link;
+
+    printf("\t\tbreakpoint\n");
+    printf("\t\t----------\n");
+
+    while(1){
+      if(present==NULL){
+          break;
+      }
+
+      printf("\t\t%04X\n",present->loc);
+      present=present->link;
+    }
+}
+
+void addBp(int position){
+    breakP* present=bpList;
+    breakP* new=(breakP*)malloc(sizeof(breakP));
+
+    new->loc=position;
+
+    while(1){
+        if(present->link==NULL){
+            new->link=present->link;
+            present->link=new;
+            break;
+        } // reach to the end of bp list
+
+        if(position==present->loc){ // is same bp, just end program
+            return;
+        }    
+        else if(position > present->loc){
+            present=present->link;
+        } // new is bigger than present, move to the next link
+        else{
+            new->link=present->link;
+            present->link=new;
+            break;
+        } // new is smaller, link to that position
+    } 
+}
+
+void deleteBp(){
+    breakP* present=bpList->link;
+    breakP* next;
+
+    if(present==NULL)
+      return;
+
+    while(1){
+        next=present->link;
+
+        if(next==NULL){
+            free(present);
+            break;
+        }
+
+        free(present);
+        present=next;
+    } // free the bpList
+
+    bpList->link=NULL; // init the bpList
 }
 
 int main(){
@@ -1375,6 +1440,9 @@ int main(){
 
   linkingSymbol=(symb*)malloc(sizeof(symb));
   linkingSymbol->link=NULL;
+
+  bpList=(breakP*)malloc(sizeof(breakP));
+  bpList->link=NULL;
 
   for(i=0;i<20;i++){
       hTable[i].link=NULL; // init the hash table

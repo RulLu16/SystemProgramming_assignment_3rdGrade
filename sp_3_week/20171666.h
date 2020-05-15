@@ -50,6 +50,11 @@ typedef struct _ObjPrint{
     int ojcode;
 }objPrint; // struct for obj file print
 
+typedef struct _BreakP{
+    int loc;
+    struct _BreakP* link;
+}breakP;
+
 // global var, init
 His* st;
 His* ed;
@@ -57,7 +62,7 @@ unsigned char memory[65536][16]={0,};
 int duAddr=0;
 int base=0;
 int program_address=0;
-int program_length=0;
+int program_length=100;
 int errorDetect=0;
 hash* hTable;
 symb* sPresent;
@@ -66,6 +71,7 @@ assem* Ast;
 assem* Aed;
 
 symb* linkingSymbol;
+breakP* bpList;
 
 //functions
 
@@ -120,4 +126,6 @@ void orProgAddr(command);
 void orLoader(command, char[]);
 void makeLinkSymb(char[]);
 void orBp(command, char[]);
-
+void printBp();
+void addBp(int);
+void deleteBp();
