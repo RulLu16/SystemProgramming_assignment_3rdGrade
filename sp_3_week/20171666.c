@@ -1288,6 +1288,10 @@ void orProgAddr(command co){ // for set program start point
 }
 
 void orLoader(command co, char o[200]){
+    program_length=0;
+    current_length=0;
+    symbolDelete(linkingSymbol);
+
 
     /*====================================
       pass 1
@@ -1323,9 +1327,8 @@ void orLoader(command co, char o[200]){
       pass 2
       ======================================*/
 
-    program_length=0;
-    current_length=0;
-    symbolDelete(linkingSymbol);
+    printf("--------------------------------\n");
+    printf("\t  total length\t%04X\n",program_length);
 
 }
 
@@ -1449,12 +1452,14 @@ void orBp(command co, char o[200]){ // for set break point to debug
         orHistoryAdd(o);
     }
     else if(strcmp(co.first, "clear")==0){
+        printf("\t[ok] clear all breakpoints\n");
         deleteBp();
         orHistoryAdd(o);
     }
     else{
        position=strtol(co.first, NULL, 16);
-       if(position<program_length){
+       if(position<=(program_length+program_address) && position>=program_address){
+           printf("\t[ok] create breakpoint %04X\n",position);
            addBp(position);
            orHistoryAdd(o);
        }
@@ -1494,10 +1499,10 @@ void addBp(int position){ // need to modify. sort?
             break;
         } // reach to the end of bp list
 
-        if(position==present->loc){ // is same bp, just end program
+        if(position==present->link->loc){ // is same bp, just end program
             return;
         }    
-        else if(position > present->loc){
+        else if(position > present->link->loc){
             present=present->link;
         } // new is bigger than present, move to the next link
         else{
@@ -1527,6 +1532,7 @@ void deleteBp(){
         present=next;
     } // free the bpList
 
+    bpList->loc=-1;
     bpList->link=NULL; // init the bpList
 }
 
@@ -1555,6 +1561,7 @@ int main(){
   linkingSymbol->link=NULL;
 
   bpList=(breakP*)malloc(sizeof(breakP));
+  bpList->loc=-1;
   bpList->link=NULL;
 
   for(i=0;i<20;i++){
