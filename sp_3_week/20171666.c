@@ -1343,6 +1343,11 @@ void orLoader(command co, char o[200]){
         }
         else if(point->line[0]=='R'){
             sectionR(point->line);
+            if(errorDetect==1){
+                errorDetect=0;
+                printf("Error: no such symbols. Load more file.\n");
+                return;
+            }
         }
         else if(point->line[0]=='T'){
             sectionT(point->line);
@@ -1504,6 +1509,10 @@ void sectionR(char fline[200]){
         index+=6;
 
         finding=symbolFind(name, linkingSymbol);
+        if(finding==NULL){
+            errorDetect=1;
+            return;
+        }
 
         referArr[referNum]=finding->loc;
     }
@@ -1534,6 +1543,44 @@ void sectionT(char fline[200]){
 }
 
 void sectionM(char fline[200]){
+    int memoryIndex;
+    int modifyLen;
+    int content=0;
+    int ratio;
+    char* sub;
+
+    sub=getSubstring(1,6,fline);
+    memoryIndex=referArr[1]+strtol(sub, NULL, 16);
+
+    sub=getSubstring(7,8,fline);
+    modifyLen=strtol(sub, NULL ,16);
+    
+    /*if(modifyLen%2==0){*/
+        for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
+            content+=memory[i/16][i%16];
+            content*=0x100;
+        }
+        content/=0x100;
+        sub=getSubstring(10,11,fline);
+        printf("%06X %06X\n",content, (int)strtol(sub,NULL, 16));
+        
+        switch(fline[9]){
+          case '+':
+            content+=referArr[strtol(sub, NULL, 16)];
+            break;
+          case '-':
+            content-=referArr[strtol(sub, NULL, 16)];
+            break;
+        }
+
+        ratio=0x10000;
+        for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
+            memory[i/16][i%16]=content/ratio;
+            ratio/=0x100;
+        }
+    /*}
+    else{
+    }*/
 }
 
 void sectionE(char fline[200]){
