@@ -1512,6 +1512,25 @@ void sectionR(char fline[200]){
 }
 
 void sectionT(char fline[200]){
+    int memoryIndex;
+    int lineLength=0;
+    int content=0;
+    char* sub;
+
+    sub=getSubstring(1,6,fline);
+    memoryIndex=referArr[1]+strtol(sub, NULL, 16);
+
+    sub=getSubstring(7,8,fline);
+    lineLength=strtol(sub, NULL, 16);
+
+    for(int i=9;i<=9+(lineLength*2);i+=2){
+        sub=getSubstring(i,i+1,fline);
+        content=strtol(sub, NULL, 16);
+        memory[memoryIndex/16][memoryIndex%16]=content;
+        memoryIndex++;
+    }
+
+    return;
 }
 
 void sectionM(char fline[200]){
