@@ -1288,7 +1288,9 @@ void orProgAddr(command co){ // for set program start point
 }
 
 void orLoader(command co, char o[200]){
-    loadFile* point=Lst->link;
+    symb* tempFind;
+    loadFile* point;
+
     program_length=0;
     current_length=0;
     symbolDelete(linkingSymbol);
@@ -1333,8 +1335,13 @@ void orLoader(command co, char o[200]){
       pass 2
       ======================================*/
 
+    point=Lst->link;
     while(point!=NULL){
-        if(point->line[0]=='R'){
+        if(point->line[0]=='H'){
+            tempFind=symbolFind(getSubstring(1,6,point->line),linkingSymbol);
+            referArr[1]=tempFind->loc;
+        }
+        else if(point->line[0]=='R'){
             sectionR(point->line);
         }
         else if(point->line[0]=='T'){
@@ -1391,7 +1398,7 @@ void addLinkSymb(int loc, char state[50]){
     return;
 }
 
-void loadFileAdd(char line[100]){
+void loadFileAdd(char line[200]){
     loadFile* new=(loadFile*)malloc(sizeof(loadFile));
 
     strcpy(new->line, line);
@@ -1471,7 +1478,37 @@ void sectionD(char fline[200]){
 }
 
 void sectionR(char fline[200]){
-    
+    int index=1;
+    int referNum;
+    int size=strlen(fline);
+    char name[50];
+    char* sub;
+    symb* finding;
+
+    while(index<size-1){
+        
+        sub=getSubstring(index, index+1, fline);
+        referNum=strtol(sub,NULL,16);
+        index+=2;
+
+        if(index+5>size-2){
+            sub=getSubstring(index, size-2, fline);
+            for(int i=size-1-index;i<6;i++){
+                strcat(sub," ");
+            }
+        }
+        else{
+          sub=getSubstring(index, index+5, fline);
+        }
+        strcpy(name, sub);
+        index+=6;
+
+        finding=symbolFind(name, linkingSymbol);
+
+        referArr[referNum]=finding->loc;
+    }
+
+    return;    
 }
 
 void sectionT(char fline[200]){
