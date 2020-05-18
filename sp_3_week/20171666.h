@@ -50,10 +50,15 @@ typedef struct _ObjPrint{
     int ojcode;
 }objPrint; // struct for obj file print
 
+typedef struct _Loadfile{
+    char line[100];
+    struct _Loadfile* link;
+}loadFile; // struct for saving obj file
+
 typedef struct _BreakP{
     int loc;
     struct _BreakP* link;
-}breakP;
+}breakP; // struct for bp list
 
 // global var, init
 His* st;
@@ -65,6 +70,7 @@ int program_address=0;
 int program_length=0;
 int current_length=0;
 int errorDetect=0;
+int referArr[256]={0,};
 hash* hTable;
 symb* sPresent;
 symb* sSaved; // symb list for assemble file
@@ -72,6 +78,8 @@ assem* Ast;
 assem* Aed;
 
 symb* linkingSymbol;
+loadFile* Lst;
+loadFile* Led;
 breakP* bpList;
 
 //functions
@@ -127,6 +135,8 @@ void orProgAddr(command);
 void orLoader(command, char[]);
 void makeLinkSymb(char[]);
 void addLinkSymb(int, char[]);
+void loadFileAdd(char[]);
+void loadFileDelete();
 void sectionH(char[]);
 void sectionD(char[]);
 void sectionR(char[]);

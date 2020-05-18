@@ -1288,9 +1288,11 @@ void orProgAddr(command co){ // for set program start point
 }
 
 void orLoader(command co, char o[200]){
+    loadFile* point=Lst->link;
     program_length=0;
     current_length=0;
     symbolDelete(linkingSymbol);
+    loadFileDelete();
 
 
     /*====================================
@@ -1322,14 +1324,30 @@ void orLoader(command co, char o[200]){
         return;
     }
     orHistoryAdd(o);
+    
+    printf("--------------------------------\n");
+    printf("\t  total length\t%04X\n",program_length);
+
 
     /*======================================
       pass 2
       ======================================*/
 
-    printf("--------------------------------\n");
-    printf("\t  total length\t%04X\n",program_length);
-
+    while(point!=NULL){
+        if(point->line[0]=='R'){
+            sectionR(point->line);
+        }
+        else if(point->line[0]=='T'){
+            sectionT(point->line);
+        }
+        else if(point->line[0]=='M'){
+            sectionM(point->line);
+        }
+        else if(point->line[0]=='E'){
+            // should I run something?
+        }
+        point=point->link;
+    } // load memory
 }
 
 void makeLinkSymb(char fname[30]){
@@ -1344,6 +1362,7 @@ void makeLinkSymb(char fname[30]){
     
     while(!feof(linkF)){
         fgets(temp, 200, linkF);
+        loadFileAdd(temp);
 
         if(temp[0]=='H'){
             sectionH(temp);
@@ -1370,6 +1389,39 @@ void addLinkSymb(int loc, char state[50]){
     linkingSymbol->link=new;
 
     return;
+}
+
+void loadFileAdd(char line[100]){
+    loadFile* new=(loadFile*)malloc(sizeof(loadFile));
+
+    strcpy(new->line, line);
+    
+    new->link=Led->link;
+    Led->link=new;
+    Led=new; //link to assemble list
+}
+
+void loadFileDelete(){
+    loadFile* present=Lst->link;
+    loadFile* next;
+
+    if(present==NULL)
+      return;
+
+    while(1){
+        next=present->link;
+
+        if(next==NULL){
+            free(present);
+            break;
+        }
+
+        free(present);
+        present=next;
+    } // free the loadfile list
+
+    Lst->link=NULL;
+    Led=Lst; // init the loadfile list
 }
 
 void sectionH(char fline[200]){
@@ -1419,6 +1471,7 @@ void sectionD(char fline[200]){
 }
 
 void sectionR(char fline[200]){
+    
 }
 
 void sectionT(char fline[200]){
@@ -1559,6 +1612,10 @@ int main(){
 
   linkingSymbol=(symb*)malloc(sizeof(symb));
   linkingSymbol->link=NULL;
+
+  Lst=(loadFile*)malloc(sizeof(loadFile));
+  Lst->link=NULL;
+  Led=Lst;
 
   bpList=(breakP*)malloc(sizeof(breakP));
   bpList->loc=-1;
