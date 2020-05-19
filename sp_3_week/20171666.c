@@ -1570,7 +1570,6 @@ void sectionM(char fline[200]){
             content-=0x100000;
         }
     }
-    printf("%d\n",content);
 
     sub=getSubstring(10,11,fline);
        
@@ -1705,6 +1704,14 @@ void deleteBp(){
     bpList->link=NULL; // init the bpList
 }
 
+void orRun(){
+    regA=regX=regB=regS=regT=0;
+    regPC=program_address;
+    regL=program_length;
+
+    printf("%04X %04X\n",regPC, regL);    
+}
+
 int main(){
   int i,j;
   char input[200];
@@ -1809,6 +1816,8 @@ int main(){
           orBp(co, savein);
       }
       else if(strcmp(co.order,"run")==0){ // if command is run
+          orHistoryAdd(savein);
+          orRun();
       }
       else{ // undefined command 
           printf("Error: wrong command\n");

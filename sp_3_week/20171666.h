@@ -71,6 +71,7 @@ int program_length=0;
 int current_length=0;
 int errorDetect=0;
 int referArr[256]={0,};
+int regA,regX,regL,regPC,regB,regS,regT; // all registers
 hash* hTable;
 symb* sPresent;
 symb* sSaved; // symb list for assemble file
@@ -148,3 +149,4 @@ void orBp(command, char[]);
 void printBp();
 void addBp(int);
 void deleteBp();
+void orRun();
