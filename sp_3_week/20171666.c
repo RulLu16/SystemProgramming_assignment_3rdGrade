@@ -1554,33 +1554,46 @@ void sectionM(char fline[200]){
 
     sub=getSubstring(7,8,fline);
     modifyLen=strtol(sub, NULL ,16);
-    
-    /*if(modifyLen%2==0){*/
-        for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
-            content+=memory[i/16][i%16];
-            content*=0x100;
+  
+    for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
+        content+=(int)memory[i/16][i%16];
+        content*=0x100;
+    }
+    content/=0x100;
+    if(memoryIndex/2==0){
+        if(content/0x100000>=0x8){
+            content-=0x1000000;
         }
-        content/=0x100;
-        sub=getSubstring(10,11,fline);
-        printf("%06X %06X\n",content, (int)strtol(sub,NULL, 16));
-        
-        switch(fline[9]){
-          case '+':
-            content+=referArr[strtol(sub, NULL, 16)];
-            break;
-          case '-':
-            content-=referArr[strtol(sub, NULL, 16)];
-            break;
-        }
-
-        ratio=0x10000;
-        for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
-            memory[i/16][i%16]=content/ratio;
-            ratio/=0x100;
-        }
-    /*}
+    }
     else{
-    }*/
+        if((content%0x100000)/0x10000>=0x8){
+            content-=0x100000;
+        }
+    }
+    printf("%d\n",content);
+
+    sub=getSubstring(10,11,fline);
+       
+    switch(fline[9]){
+      case '+':
+        content+=referArr[strtol(sub, NULL, 16)];
+        break;
+      case '-':
+        content-=referArr[strtol(sub, NULL, 16)];
+        break;
+    }
+    if(content<0){
+        if(modifyLen/2==0)
+          content+=0x1000000;
+        else
+          content+=0x100000;
+    }
+
+    ratio=0x10000;
+    for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
+        memory[i/16][i%16]=content/ratio;
+        ratio/=0x100;
+    }
 }
 
 void sectionE(char fline[200]){
