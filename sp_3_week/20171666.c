@@ -1285,6 +1285,8 @@ void symbolDelete(symb* delS){ // for delete symbol list
 
 void orProgAddr(command co){ // for set program start point
     program_address=strtol(co.first, NULL, 16);
+
+    return;
 }
 
 void orLoader(command co, char o[200]){
@@ -1627,7 +1629,7 @@ void orBp(command co, char o[200]){ // for set break point to debug
     else{
        position=strtol(co.first, NULL, 16);
        if(position<=(program_length+program_address) && position>=program_address){
-           printf("\t[ok] create breakpoint %04X\n",position);
+           printf("\t[ok] create breakpoint %X\n",position);
            addBp(position);
            orHistoryAdd(o);
        }
@@ -1649,7 +1651,7 @@ void printBp(){
           break;
       }
 
-      printf("\t\t%04X\n",present->loc);
+      printf("\t\t%X\n",present->loc);
       present=present->link;
     }
 }
@@ -1705,11 +1707,144 @@ void deleteBp(){
 }
 
 void orRun(){
-    regA=regX=regB=regS=regT=0;
-    regPC=program_address;
-    regL=program_length;
+    if(end_flag==0){
+        end_flag=1;
+        initRegister();
+    }
 
-    printf("%04X %04X\n",regPC, regL);    
+    while(reg[8]<program_length){
+        disAssemble();
+
+        if(isStop()==1 && stop_flag==0){
+            printRegister();
+            stop_flag=1;
+            printf("\tStop at checkpoint[%X]\n",reg[8]);
+            return;
+        }
+        stop_flag=0;
+    }
+
+    printRegister();
+    printf("\tEnd program\n");
+    end_flag=0;
+
+    return;
+}
+
+void initRegister(){
+    for(int i=0;i<10;i++){
+        reg[i]=0;
+    }
+    reg[8]=program_address;
+    reg[2]=program_length;
+
+    return;
+}
+
+void printRegister(){
+    printf("A : %06X   X : %06X\n",reg[0], reg[1]);
+    printf("L : %06X  PC : %06X\n",reg[2], reg[8]);
+    printf("B : %06X   S : %06X\n",reg[3], reg[4]);
+    printf("T : %06X\n",reg[5]);
+
+    return;
+}
+
+void disAssemble(){
+    int opcode,ni;
+    int temp;
+
+    opcode=(int)memory[reg[8]/16][reg[8]%16];
+    
+    for(int i=0;i<=3;i++){
+        temp=(opcode-i)%0x10;
+        if(temp==0 || temp==4 || temp==8 || temp==12){
+            ni=i;
+            opcode-=i;
+            break;
+        }
+    }
+}
+
+void executeInstruction(int op, int ni){
+    int disp;
+
+    switch(op){
+      //STL
+      case 0x14:
+        break;
+
+      //LDB
+      case 0x68:
+        break;
+      //JSUB
+      case 0x48:
+        break;
+      //LDA
+      case 0x00:
+        break;
+      //COMP
+      case 0x28:
+        break;
+      //JEQ
+      case 0x30:
+        break;
+      //J
+      case 0x3C:
+        break;
+      //STA
+      case 0x0C:
+        break;
+      //CLEAR
+      case 0xB4:
+        break;
+      //LDT
+      case 0x74:
+        break;
+      //TD
+      case 0xE0:
+        break;
+      //RD
+      case 0xD8:
+        break;
+      //COMPR
+      case 0xA0:
+        break;
+      //STCH
+      case 0x54:
+        break;
+      //TIXR
+      case 0xB8:
+        break;
+      //JLT
+      case 0x38:
+        break;
+      //STX
+      case 0x10:
+        break;
+      //RSUB
+      case 0x4C:
+        break;
+      //LDCH
+      case 0x50:
+        break;
+    }
+}
+
+int calculateDisp(int format){
+}
+
+int isStop(){
+    breakP* point=bpList->link;
+
+    while(point!=NULL){
+        if(point->loc==reg[8])
+          return 1;
+
+        point=point->link;
+    }
+
+    return 0;
 }
 
 int main(){

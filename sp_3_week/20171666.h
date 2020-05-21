@@ -71,7 +71,9 @@ int program_length=0;
 int current_length=0;
 int errorDetect=0;
 int referArr[256]={0,};
-int regA,regX,regL,regPC,regB,regS,regT; // all registers
+int reg[10]; // all registers
+int end_flag=0;
+int stop_flag=0;
 hash* hTable;
 symb* sPresent;
 symb* sSaved; // symb list for assemble file
@@ -150,3 +152,9 @@ void printBp();
 void addBp(int);
 void deleteBp();
 void orRun();
+void initRegister();
+void printRegister();
+void disAssemble();
+void executeInstruction(int, int);
+int calculateDisp(int);
+int isStop(); // is breakpoint, return 1
