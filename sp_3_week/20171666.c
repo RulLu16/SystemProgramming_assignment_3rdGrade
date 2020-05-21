@@ -1713,7 +1713,7 @@ void orRun(){
     }
 
     while(reg[8]<program_length){
-        disAssemble();
+        disAssemble(reg[8]);
 
         if(isStop()==1 && stop_flag==0){
             printRegister();
@@ -1750,7 +1750,7 @@ void printRegister(){
     return;
 }
 
-void disAssemble(){
+void disAssemble(int pc){
     int opcode,ni;
     int temp;
 
@@ -1764,74 +1764,335 @@ void disAssemble(){
             break;
         }
     }
+    executeInstruction(opcode, ni, pc);
 }
 
-void executeInstruction(int op, int ni){
-    int disp;
+void executeInstruction(int op, int ni, int pc){
+    int disp,result;
+    int format=0;
+    int ratio=0x10000;
+    int xbpe=memory[(pc+1)/16][(pc+1)%16]/0x10;
 
     switch(op){
       //STL
       case 0x14:
+        if(xbpe/2==0){
+          disp=getDisp(3,pc,xbpe);
+          format=3;
+        }
+        else{
+          disp=getDisp(4,pc,xbpe);
+          format=4;
+        }
+        ratio=0x10000;
+        for(int i=0;i<3;i++){
+            memory[(disp+i)/16][(disp+i)%16]=reg[2]/ratio;
+            ratio/=0x100;
+        }
+        reg[8]+=format;
         break;
-
       //LDB
       case 0x68:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        reg[3]=calculateDisp(disp,ni);
+        reg[8]+=format;
         break;
       //JSUB
       case 0x48:
+        reg[2]=calculateDisp(reg[8],3);
+        if(xbpe/2==0){
+            reg[8]=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            reg[8]=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        reg[8]+=format;
         break;
       //LDA
       case 0x00:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        reg[0]=calculateDisp(disp,ni);
+        reg[8]+=format;
         break;
       //COMP
       case 0x28:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        disp=calculateDisp(disp, ni);
+        if(reg[0]>disp)
+          cc=0;
+        else if(reg[0]==disp)
+          cc=1;
+        else
+          cc=2;
+        reg[8]+=format;
         break;
       //JEQ
       case 0x30:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+        }
+        if(cc==1){
+            reg[8]=disp;
+        }
         break;
       //J
       case 0x3C:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+        }
+        reg[8]=disp;
         break;
       //STA
       case 0x0C:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+
+        ratio=0x10000;
+        for(int i=0;i<3;i++){
+            memory[(disp+i)/16][(disp+i)%16]=reg[0]/ratio;
+            ratio/=0x100;
+        }
+        reg[8]+=format;        
         break;
       //CLEAR
       case 0xB4:
+        reg[memory[(reg[8]+1)/16][(reg[8]+1)%16]/0x100]=0;
+        reg[8]+=2;
         break;
       //LDT
       case 0x74:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        reg[5]=calculateDisp(disp,ni);
+        reg[8]+=format;
         break;
       //TD
       case 0xE0:
+        if(xbpe/2==0){
+            format=3;
+        }
+        else{
+            format=4;
+        }
+        cc=2;
+        reg[8]+=format;
         break;
       //RD
       case 0xD8:
+        if(xbpe/2==0){
+            format=3;
+        }
+        else{
+            format=4;
+        }
+        rd_flag=1;
+        reg[8]+=format;
         break;
       //COMPR
       case 0xA0:
+        if(rd_flag==1){
+            rd_flag=0;
+            cc=1;
+        }
+        else{
+            int first=memory[(reg[8]+1)/16][(reg[8]+1)%16]/0x10;
+            int second=memory[(reg[8]+1)/16][(reg[8]+1)%16]%0x10;
+            if(reg[first]>reg[second])
+              cc=0;
+            else if(reg[first]==reg[second])
+              cc=1;
+            else
+              cc=-1;
+            reg[8]+=2;
+        }
         break;
       //STCH
       case 0x54:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        memory[disp/16][disp%16]=reg[0]/0x10000;
+        reg[8]+=format;
         break;
       //TIXR
       case 0xB8:
+        reg[1]=calculateDisp(reg[1],3)+1;
+        int first=calculateDisp(reg[1],3);
+        int second=reg[memory[(reg[8]+1)/16][(reg[8]+1)%16]];
+        second=calculateDisp(second,3);
+        if(first>second)
+          cc=0;
+        else if(first==second)
+          cc=1;
+        else
+          cc=2;
+        reg[8]+=2;
         break;
       //JLT
       case 0x38:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+        }
+        if(cc==2){
+            reg[8]=disp;
+        }
         break;
       //STX
       case 0x10:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+
+        ratio=0x10000;
+        for(int i=0;i<3;i++){
+            memory[(disp+i)/16][(disp+i)%16]=reg[1]/ratio;
+            ratio/=0x100;
+        }
+        reg[8]+=format;   
         break;
       //RSUB
       case 0x4C:
+        if(xbpe/2==0){
+            format=3;
+        }
+        else{
+            format=4;
+        }
+        reg[8]=reg[2];
         break;
       //LDCH
       case 0x50:
+        if(xbpe/2==0){
+            disp=getDisp(3,pc,xbpe);
+            format=3;
+        }
+        else{
+            disp=getDisp(4,pc,xbpe);
+            format=4;
+        }
+        disp=calculateDisp(disp, ni);
+        disp/=0x10000;
+        disp*=0x10000;
+        reg[0]+=disp;
+        reg[8]+=format;
         break;
     }
+    printRegister();
 }
 
-int calculateDisp(int format){
+int getDisp(int format, int pc, int xbpe){
+    int disp=0;
+
+    disp=memory[(pc+1)/16][(pc+1)%16]%0x10;
+    for(int i=2;i<format;i++){
+        disp*=0x100;
+        disp+=memory[(pc+i)/16][(pc+i)%16];
+    }
+
+    if(format==3 && disp/0x100 >= 0x8){
+        disp-=0x1000;
+    }
+
+    switch(xbpe){
+      case 2:
+        disp+=reg[8];
+        break;
+      case 4:
+        disp+=reg[3];
+        break;
+      case 10:
+        disp+=reg[8]+reg[1];
+        break;
+      case 12:
+        disp+=reg[3]+reg[1];
+        break;
+    }
+
+    return disp;
+}
+
+int calculateDisp(int disp, int ni){
+    int result;
+
+    switch(ni){
+      case 1:
+        return disp;
+      case 2:
+        result=getValue(disp);
+        result=getValue(result);
+        return result;
+      case 3:
+        result=getValue(disp);
+        return result;
+    }
+
+    return 0;
+}
+
+int getValue(int disp){
+    int result=0;
+
+    for(int i=0;i<3;i++){
+        result+=memory[(disp+i)/16][(disp+i)%16];
+        result*=0x100;
+    }
+    result/=0x100;
+
+    return result;
 }
 
 int isStop(){

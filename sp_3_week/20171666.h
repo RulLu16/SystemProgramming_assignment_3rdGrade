@@ -71,7 +71,9 @@ int program_length=0;
 int current_length=0;
 int errorDetect=0;
 int referArr[256]={0,};
-int reg[10]; // all registers
+int reg[10]; // 0-A 1-X 2-L 8-PC 3-B 4-S 5-T
+int cc=-1; // 0-> 1-= 2-<
+int rd_flag=0;
 int end_flag=0;
 int stop_flag=0;
 hash* hTable;
@@ -154,7 +156,9 @@ void deleteBp();
 void orRun();
 void initRegister();
 void printRegister();
-void disAssemble();
-void executeInstruction(int, int);
-int calculateDisp(int);
+void disAssemble(int);
+void executeInstruction(int, int, int);
+int getDisp(int, int, int);
+int calculateDisp(int, int);
+int getValue(int);
 int isStop(); // is breakpoint, return 1
