@@ -462,7 +462,7 @@ void orOpcodeList(){ //for print opcodelist
 }
 
 void orType(command co, char o[200]){ // for print file
-    char temp[100];
+   char temp[100];
     DIR* tdir=NULL;
     struct dirent* tdlist=NULL;
     struct stat tbuf;
@@ -500,7 +500,7 @@ void orType(command co, char o[200]){ // for print file
     printf("\n");
 
     fclose(tfp);
-    closedir(tdir);   
+    closedir(tdir);  
 }
 
 void orAssemble(command co, char o[200]){ // for assemble filename
@@ -1562,7 +1562,7 @@ void sectionM(char fline[200]){
         content*=0x100;
     }
     content/=0x100;
-    if(memoryIndex/2==0){
+    if(modifyLen%2==0){
         if(content/0x100000>=0x8){
             content-=0x1000000;
         }
@@ -1584,7 +1584,7 @@ void sectionM(char fline[200]){
         break;
     }
     if(content<0){
-        if(modifyLen/2==0)
+        if(modifyLen%2==0)
           content+=0x1000000;
         else
           content+=0x100000;
@@ -1707,21 +1707,24 @@ void deleteBp(){
 }
 
 void orRun(){
+    int pre_pc;
     if(end_flag==0){
         end_flag=1;
         initRegister();
     }
 
     while(reg[8]<program_length){
-        disAssemble(reg[8]);
-
         if(isStop()==1 && stop_flag==0){
             printRegister();
             stop_flag=1;
             printf("\tStop at checkpoint[%X]\n",reg[8]);
             return;
         }
-        stop_flag=0;
+
+        else {
+            disAssemble(reg[8]);
+            stop_flag = 0;
+        }
     }
 
     printRegister();
@@ -1776,71 +1779,76 @@ void executeInstruction(int op, int ni, int pc){
     switch(op){
       //STL
       case 0x14:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
+            format = 3;
           disp=getDisp(3,pc,xbpe);
-          format=3;
         }
         else{
           disp=getDisp(4,pc,xbpe);
           format=4;
-        }
+        } 
         ratio=0x10000;
         for(int i=0;i<3;i++){
             memory[(disp+i)/16][(disp+i)%16]=reg[2]/ratio;
             ratio/=0x100;
         }
-        reg[8]+=format;
+        reg[8] += format; 
         break;
       //LDB
       case 0x68:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            disp=calculateDisp(disp, ni);
             format=3;
         }
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        reg[3]=calculateDisp(disp,ni);
+        reg[3] = disp;
         reg[8]+=format;
         break;
       //JSUB
       case 0x48:
-        reg[2]=calculateDisp(reg[8],3);
-        if(xbpe/2==0){
-            reg[8]=getDisp(3,pc,xbpe);
-            format=3;
+        if(xbpe%2==0){
+            reg[2] = reg[8]+3;
+            disp=getDisp(3,pc,xbpe);
+            if (ni == 2) {
+                disp = calculateDisp(disp, 3);
+            }
         }
         else{
-            reg[8]=getDisp(4,pc,xbpe);
-            format=4;
+            reg[2] = reg[8]+4;
+            disp=getDisp(4,pc,xbpe);
         }
-        reg[8]+=format;
+        reg[8] = disp;
         break;
       //LDA
       case 0x00:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            disp = calculateDisp(disp, ni);
             format=3;
         }
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        reg[0]=calculateDisp(disp,ni);
+        reg[0] = disp;
         reg[8]+=format;
         break;
       //COMP
       case 0x28:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            disp = calculateDisp(disp, ni);
             format=3;
         }
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        disp=calculateDisp(disp, ni);
+
         if(reg[0]>disp)
           cc=0;
         else if(reg[0]==disp)
@@ -1848,23 +1856,36 @@ void executeInstruction(int op, int ni, int pc){
         else
           cc=2;
         reg[8]+=format;
+        
         break;
       //JEQ
       case 0x30:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            format = 3;
+            if (ni == 2) {
+                disp = calculateDisp(disp, 3);
+            }
         }
         else{
             disp=getDisp(4,pc,xbpe);
+            format = 4;
         }
         if(cc==1){
-            reg[8]=disp;
+            reg[8] = disp;
         }
+        else {
+            reg[8] += format;
+        }
+        
         break;
       //J
       case 0x3C:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            if (ni == 2) {
+                disp = calculateDisp(disp, 3);
+            }
         }
         else{
             disp=getDisp(4,pc,xbpe);
@@ -1873,7 +1894,7 @@ void executeInstruction(int op, int ni, int pc){
         break;
       //STA
       case 0x0C:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
             format=3;
         }
@@ -1891,25 +1912,26 @@ void executeInstruction(int op, int ni, int pc){
         break;
       //CLEAR
       case 0xB4:
-        reg[memory[(reg[8]+1)/16][(reg[8]+1)%16]/0x100]=0;
+        reg[memory[(pc+1)/16][(pc+1)%16]/0x100]=0;
         reg[8]+=2;
         break;
       //LDT
       case 0x74:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            disp=calculateDisp(disp, ni);
             format=3;
         }
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        reg[5]=calculateDisp(disp,ni);
+        reg[5]=disp;
         reg[8]+=format;
         break;
       //TD
       case 0xE0:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             format=3;
         }
         else{
@@ -1920,7 +1942,7 @@ void executeInstruction(int op, int ni, int pc){
         break;
       //RD
       case 0xD8:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             format=3;
         }
         else{
@@ -1936,20 +1958,20 @@ void executeInstruction(int op, int ni, int pc){
             cc=1;
         }
         else{
-            int first=memory[(reg[8]+1)/16][(reg[8]+1)%16]/0x10;
-            int second=memory[(reg[8]+1)/16][(reg[8]+1)%16]%0x10;
+            int first=memory[(pc+1)/16][(pc+1)%16]/0x10;
+            int second=memory[(pc+1)/16][(pc+1)%16]%0x10;
             if(reg[first]>reg[second])
               cc=0;
             else if(reg[first]==reg[second])
               cc=1;
             else
               cc=-1;
-            reg[8]+=2;
         }
+        reg[8] += 2;
         break;
       //STCH
       case 0x54:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
             format=3;
         }
@@ -1957,15 +1979,14 @@ void executeInstruction(int op, int ni, int pc){
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        memory[disp/16][disp%16]=reg[0]/0x10000;
+        memory[disp/16][disp%16]=reg[0]%0x100;
         reg[8]+=format;
         break;
       //TIXR
       case 0xB8:
-        reg[1]=calculateDisp(reg[1],3)+1;
-        int first=calculateDisp(reg[1],3);
-        int second=reg[memory[(reg[8]+1)/16][(reg[8]+1)%16]];
-        second=calculateDisp(second,3);
+        reg[1]++;
+        int first = reg[1];
+        int second=reg[memory[(pc+1)/16][(pc+1)%16]/0x10];
         if(first>second)
           cc=0;
         else if(first==second)
@@ -1976,19 +1997,27 @@ void executeInstruction(int op, int ni, int pc){
         break;
       //JLT
       case 0x38:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
+            format = 3;
             disp=getDisp(3,pc,xbpe);
+            if (ni == 2) {
+                disp = calculateDisp(disp, 3);
+            }
         }
         else{
+            format = 4;
             disp=getDisp(4,pc,xbpe);
         }
         if(cc==2){
             reg[8]=disp;
         }
+        else {
+            reg[8] += format;
+        }
         break;
       //STX
       case 0x10:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
             format=3;
         }
@@ -2006,32 +2035,39 @@ void executeInstruction(int op, int ni, int pc){
         break;
       //RSUB
       case 0x4C:
-        if(xbpe/2==0){
-            format=3;
-        }
-        else{
-            format=4;
-        }
         reg[8]=reg[2];
         break;
       //LDCH
       case 0x50:
-        if(xbpe/2==0){
+        if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
+            disp = calculateDisp(disp, ni);
             format=3;
         }
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        disp=calculateDisp(disp, ni);
-        disp/=0x10000;
-        disp*=0x10000;
+        disp%=0x100;
         reg[0]+=disp;
         reg[8]+=format;
         break;
+      //WD
+      case 0xDC:
+          if (xbpe % 2 == 0) {
+              format = 3;
+          }
+          else {
+              format = 4;
+          }
+          reg[8] += format;
+          break;
+
+      default:
+          reg[8] += 3;
     }
-    printRegister();
+
+    return;
 }
 
 int getDisp(int format, int pc, int xbpe){
@@ -2044,18 +2080,21 @@ int getDisp(int format, int pc, int xbpe){
     }
 
     if(format==3 && disp/0x100 >= 0x8){
-        disp-=0x1000;
+        if (xbpe > 1) {
+            disp -= 0x1000;
+        }
     }
 
+    pc += format;
     switch(xbpe){
       case 2:
-        disp+=reg[8];
+        disp+=pc;
         break;
       case 4:
         disp+=reg[3];
         break;
       case 10:
-        disp+=reg[8]+reg[1];
+        disp+=pc+reg[1];
         break;
       case 12:
         disp+=reg[3]+reg[1];
