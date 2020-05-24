@@ -1289,7 +1289,7 @@ void orProgAddr(command co){ // for set program start point
     return;
 }
 
-void orLoader(command co, char o[200]){
+void orLoader(command co, char o[200]){ // for link and load program
     symb* tempFind;
     loadFile* point;
 
@@ -1297,7 +1297,7 @@ void orLoader(command co, char o[200]){
     current_length=0;
     symbolDelete(linkingSymbol);
     loadFileDelete();
-    end_flag=0;
+    end_flag=0; // init data
 
 
     /*====================================
@@ -1308,21 +1308,21 @@ void orLoader(command co, char o[200]){
     printf("section\tname\n");
     printf("--------------------------------\n");
 
-    if(strcmp(co.first,"-")!=0){
+    if(strcmp(co.first,"-")!=0){ // link first file in pass1
         makeLinkSymb(co.first);
-    }
+    } 
     else{
         printf("Error: there is no filename\n");
         symbolDelete(linkingSymbol);
         return;
-    }
+    } // if there is no file
 
-    if(strcmp(co.second,"-")!=0){
+    if(strcmp(co.second,"-")!=0){ // link second file in pass1
         makeLinkSymb(co.second);
     }
-    if(strcmp(co.third,"-")!=0){
+    if(strcmp(co.third,"-")!=0){ // link third file in pass1
         makeLinkSymb(co.third);
-    }
+    } 
 
     if(errorDetect==1){ // if error occurs
         errorDetect=0;
@@ -1340,36 +1340,33 @@ void orLoader(command co, char o[200]){
 
     point=Lst->link;
     while(point!=NULL){
-        if(point->line[0]=='H'){
+        if(point->line[0]=='H'){ // H line 
             tempFind=symbolFind(getSubstring(1,6,point->line),linkingSymbol);
-            referArr[1]=tempFind->loc;
+            referArr[1]=tempFind->loc; // save 01 reference number
         }
-        else if(point->line[0]=='R'){
+        else if(point->line[0]=='R'){ // R line
             sectionR(point->line);
-            if(errorDetect==1){
+            if(errorDetect==1){ // if error occurs
                 errorDetect=0;
                 printf("Error: no such symbols. Load more file.\n");
                 return;
             }
         }
-        else if(point->line[0]=='T'){
+        else if(point->line[0]=='T'){ // T line
             sectionT(point->line);
         }
-        else if(point->line[0]=='M'){
+        else if(point->line[0]=='M'){ // M line
             sectionM(point->line);
-        }
-        else if(point->line[0]=='E'){
-            // should I run something?
         }
         point=point->link;
     } // load memory
 }
 
-void makeLinkSymb(char fname[30]){
+void makeLinkSymb(char fname[30]){ // for make linking symbol list
     FILE* linkF=fopen(fname,"r");
     char temp[200];
 
-    if(linkF==NULL){
+    if(linkF==NULL){ // if there is no file
         printf("Error: there is no such file\n");
         errorDetect=1;
         return;
@@ -1379,13 +1376,13 @@ void makeLinkSymb(char fname[30]){
         fgets(temp, 200, linkF);
         loadFileAdd(temp);
 
-        if(temp[0]=='H'){
+        if(temp[0]=='H'){ // H line
             sectionH(temp);
         }
-        else if(temp[0]=='D'){
+        else if(temp[0]=='D'){ // D line
             sectionD(temp);
         }     
-        else if(temp[0]=='E'){
+        else if(temp[0]=='E'){ // E line
             program_length+=current_length;
         }
     }
@@ -1394,7 +1391,7 @@ void makeLinkSymb(char fname[30]){
     return;
 }
 
-void addLinkSymb(int loc, char state[50]){
+void addLinkSymb(int loc, char state[50]){ // for add linking symbol
     symb* new=(symb*)malloc(sizeof(symb));
 
     new->loc=loc;
@@ -1406,17 +1403,17 @@ void addLinkSymb(int loc, char state[50]){
     return;
 }
 
-void loadFileAdd(char line[200]){
+void loadFileAdd(char line[200]){ // for add loadfile
     loadFile* new=(loadFile*)malloc(sizeof(loadFile));
 
     strcpy(new->line, line);
     
     new->link=Led->link;
     Led->link=new;
-    Led=new; //link to assemble list
+    Led=new; //link to obj file list
 }
 
-void loadFileDelete(){
+void loadFileDelete(){ // for delete loadfile list
     loadFile* present=Lst->link;
     loadFile* next;
 
@@ -1439,28 +1436,28 @@ void loadFileDelete(){
     Led=Lst; // init the loadfile list
 }
 
-void sectionH(char fline[200]){
+void sectionH(char fline[200]){ // H line
     char* sub;
     char name[50];
     int location;
 
     sub=getSubstring(1,6,fline);
-    strcpy(name, sub);
+    strcpy(name, sub); // get program name
 
     sub=getSubstring(7,12,fline);
     location=strtol(sub, NULL, 16);
-    location+=program_length+program_address;
+    location+=program_length+program_address; // get start address
 
     sub=getSubstring(13,18,fline);
-    current_length=strtol(sub, NULL, 16);
+    current_length=strtol(sub, NULL, 16); // get current program length
 
-    addLinkSymb(location, name);
+    addLinkSymb(location, name); // add to linking symbol list
     printf("%s\t\t%04X\t%04X\n",name,location,current_length);
 
     return;
 }
 
-void sectionD(char fline[200]){
+void sectionD(char fline[200]){ // D line
     char* sub;
     char name[50];
     int location;
@@ -1470,14 +1467,14 @@ void sectionD(char fline[200]){
     while(index<size-1){
 
       sub=getSubstring(index,index+5,fline);
-      strcpy(name, sub);
+      strcpy(name, sub); // get definition name
       index+=6;
 
       sub=getSubstring(index,index+5,fline);
       location=strtol(sub,NULL, 16);
-      location+=program_address+program_length;
+      location+=program_address+program_length; // get definition loc
 
-      addLinkSymb(location, name);
+      addLinkSymb(location, name); // add to linking symbol list
       printf("\t%s\t%04X\n",name,location);
       index+=6;
     }
@@ -1485,7 +1482,7 @@ void sectionD(char fline[200]){
     return;
 }
 
-void sectionR(char fline[200]){
+void sectionR(char fline[200]){ // R line
     int index=1;
     int referNum;
     int size=strlen(fline);
@@ -1496,56 +1493,58 @@ void sectionR(char fline[200]){
     while(index<size-1){
         
         sub=getSubstring(index, index+1, fline);
-        referNum=strtol(sub,NULL,16);
+        referNum=strtol(sub,NULL,16); // get reference number
         index+=2;
 
-        if(index+5>size-2){
+        if(index+5>size-2){ // if reference name is longer than file end
             sub=getSubstring(index, size-2, fline);
             for(int i=size-1-index;i<6;i++){
                 strcat(sub," ");
-            }
+            } // concat " " to the end and get reference name
         }
         else{
           sub=getSubstring(index, index+5, fline);
-        }
+        } // get reference name
         strcpy(name, sub);
         index+=6;
 
         finding=symbolFind(name, linkingSymbol);
-        if(finding==NULL){
+        if(finding==NULL){ // if there is no reference name in list
             errorDetect=1;
             return;
         }
 
-        referArr[referNum]=finding->loc;
+        referArr[referNum]=finding->loc; // save in referArr
     }
 
     return;    
 }
 
-void sectionT(char fline[200]){
+void sectionT(char fline[200]){ // T line
     int memoryIndex;
     int lineLength=0;
     int content=0;
     char* sub;
 
     sub=getSubstring(1,6,fline);
-    memoryIndex=referArr[1]+strtol(sub, NULL, 16);
+    memoryIndex=referArr[1]+strtol(sub, NULL, 16); 
+    // get start loc of T line
 
     sub=getSubstring(7,8,fline);
     lineLength=strtol(sub, NULL, 16);
+    // get T line length
 
     for(int i=9;i<=9+(lineLength*2);i+=2){
         sub=getSubstring(i,i+1,fline);
         content=strtol(sub, NULL, 16);
         memory[memoryIndex/16][memoryIndex%16]=content;
         memoryIndex++;
-    }
+    } // get content and load to memory
 
     return;
 }
 
-void sectionM(char fline[200]){
+void sectionM(char fline[200]){ // M line
     int memoryIndex;
     int modifyLen;
     int content=0;
@@ -1554,14 +1553,16 @@ void sectionM(char fline[200]){
 
     sub=getSubstring(1,6,fline);
     memoryIndex=referArr[1]+strtol(sub, NULL, 16);
+    // get modify address
 
     sub=getSubstring(7,8,fline);
     modifyLen=strtol(sub, NULL ,16);
+    // get modify length (half byte)
   
     for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
         content+=(int)memory[i/16][i%16];
         content*=0x100;
-    }
+    } // get memory content
     content/=0x100;
     if(modifyLen%2==0){
         if(content/0x100000>=0x8){
@@ -1572,9 +1573,9 @@ void sectionM(char fline[200]){
         if((content%0x100000)/0x10000>=0x8){
             content-=0x100000;
         }
-    }
+    } // if it is negative number, use 2's complement
 
-    sub=getSubstring(10,11,fline);
+    sub=getSubstring(10,11,fline); // get reference number
        
     switch(fline[9]){
       case '+':
@@ -1583,29 +1584,29 @@ void sectionM(char fline[200]){
       case '-':
         content-=referArr[strtol(sub, NULL, 16)];
         break;
-    }
+    } // calculate modification
     if(content<0){
         if(modifyLen%2==0)
           content+=0x1000000;
         else
           content+=0x100000;
-    }
+    } // if it is negative number, use 2's complement
 
     ratio=0x10000;
     for(int i=memoryIndex;i<memoryIndex+(modifyLen/2)+(modifyLen%2);i++){
         memory[i/16][i%16]=content/ratio;
         ratio/=0x100;
-    }
+    } // load to memory
 }
 
-char* getSubstring(int start, int end, char str[200]){
+char* getSubstring(int start, int end, char str[200]){ // for get substring
     char* result=(char*)malloc(sizeof(char)*100);
     int index=0;
 
     for(int i=start;i<=end;i++){
         result[index]=str[i];
         index++;
-    }
+    } // make substring from start to end
     result[index]='\0';
 
     return result;
@@ -1620,25 +1621,26 @@ void orBp(command co, char o[200]){ // for set break point to debug
         orHistoryAdd(o);
     }
     else if(strcmp(co.first, "clear")==0){
+        // clear all bp
         printf("\t[ok] clear all breakpoints\n");
         deleteBp();
         orHistoryAdd(o);
     }
     else{
-       position=strtol(co.first, NULL, 16);
-       if(position<=(program_length+program_address) && position>=program_address){
+       position=strtol(co.first, NULL, 16); // get bp position
+       if(position<=(program_length+program_address) && position>=program_address){ // if address is in range of program
            printf("\t[ok] create breakpoint %X\n",position);
-           addBp(position);
+           addBp(position); // add to bp list
            orHistoryAdd(o);
        }
-       else{
+       else{ // error occurs
            printf("Error: wrong address.\n");
            return;
        }
     }
 }
 
-void printBp(){
+void printBp(){ // for print bp
     breakP* present=bpList->link;
 
     printf("\t\tbreakpoint\n");
@@ -1649,12 +1651,12 @@ void printBp(){
           break;
       }
 
-      printf("\t\t%X\n",present->loc);
+      printf("\t\t\t%X\n",present->loc);
       present=present->link;
     }
 }
 
-void addBp(int position){ // need to modify. sort?
+void addBp(int position){ // for add bp
     breakP* present=bpList;
     breakP* new=(breakP*)malloc(sizeof(breakP));
 
@@ -1681,7 +1683,7 @@ void addBp(int position){ // need to modify. sort?
     } 
 }
 
-void deleteBp(){
+void deleteBp(){ // for delete bp list
     breakP* present=bpList->link;
     breakP* next;
 
@@ -1704,14 +1706,14 @@ void deleteBp(){
     bpList->link=NULL; // init the bpList
 }
 
-void orRun(){
+void orRun(){ // for order run
     if(end_flag==0){
         end_flag=1;
         initRegister();
-    }
+    } // when first run
 
-    while(reg[8]<program_length){
-        if(isStop()==1 && stop_flag==0){
+    while(reg[8]<program_length){ // until end program
+        if(isStop()==1 && stop_flag==0){ // if reach to bp, end run
             printRegister();
             stop_flag=1;
             printf("\tStop at checkpoint[%X]\n",reg[8]);
@@ -1719,7 +1721,7 @@ void orRun(){
         }
 
         else {
-            disAssemble(reg[8]);
+            disAssemble(reg[8]); // disassemble start
             stop_flag = 0;
         }
     }
@@ -1731,7 +1733,7 @@ void orRun(){
     return;
 }
 
-void initRegister(){
+void initRegister(){ // for init registers
     for(int i=0;i<10;i++){
         reg[i]=0;
     }
@@ -1741,7 +1743,7 @@ void initRegister(){
     return;
 }
 
-void printRegister(){
+void printRegister(){ // for print registers
     printf("A : %06X   X : %06X\n",reg[0], reg[1]);
     printf("L : %06X  PC : %06X\n",reg[2], reg[8]);
     printf("B : %06X   S : %06X\n",reg[3], reg[4]);
@@ -1756,18 +1758,18 @@ void disAssemble(int pc){ // for get opcode
 
     opcode=(int)memory[reg[8]/16][reg[8]%16];
     
-    for(int i=0;i<=3;i++){
+    for(int i=0;i<=3;i++){ 
         temp=(opcode-i)%0x10;
         if(temp==0 || temp==4 || temp==8 || temp==12){
-            ni=i;
-            opcode-=i;
+            ni=i; // get ni
+            opcode-=i; // get opcode
             break;
         }
     }
-    executeInstruction(opcode, ni, pc);
+    executeInstruction(opcode, ni, pc); // execute instructions
 }
 
-void executeInstruction(int op, int ni, int pc){ // execute instructions
+void executeInstruction(int op, int ni, int pc){ // for execute instructions
     int disp,result;
     int format=0;
     int ratio=0x10000;
@@ -1776,7 +1778,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
     switch(op){
       //STL
       case 0x14:
-        opStore(2,pc,xbpe);        
+        opStore(2,pc,xbpe);    
         break;
       //LDB
       case 0x68:
@@ -1786,7 +1788,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
       case 0x48:
         if(xbpe%2==0){
             reg[2] = reg[8]+3;
-            disp=getDisp(3,pc,xbpe);
+            disp=getDisp(3,pc,xbpe); // get disp
             if (ni == 2) {
                 disp = calculateDisp(disp, 3);
             }
@@ -1811,7 +1813,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
         else{
             disp=getDisp(4,pc,xbpe);
             format=4;
-        }
+        } // get disp and its content
 
         if(reg[0]>disp)
           cc=0;
@@ -1820,7 +1822,6 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
         else
           cc=2;
         reg[8]+=format;
-        
         break;
       //JEQ
       case 0x30:
@@ -1836,7 +1837,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
         }
         else{
             disp=getDisp(4,pc,xbpe);
-        }
+        } // get disp and its content
         reg[8]=disp;
         break;
       //STA
@@ -1871,12 +1872,12 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
         else{
             format=4;
         }
-        rd_flag=1;
+        rd_flag=1; // set rd flag
         reg[8]+=format;
         break;
       //COMPR
       case 0xA0:
-        if(rd_flag==1){
+        if(rd_flag==1){ // if rd_flag is set, cc is =
             rd_flag=0;
             cc=1;
         }
@@ -1902,7 +1903,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
-        memory[disp/16][disp%16]=reg[0]%0x100;
+        memory[disp/16][disp%16]=reg[0]%0x100; //store A's rightmost byte
         reg[8]+=format;
         break;
       //TIXR
@@ -1942,7 +1943,7 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
             format=4;
         }
         disp%=0x100;
-        reg[0]+=disp;
+        reg[0]+=disp; // load disp's rightmost byte
         reg[8]+=format;
         break;
       //WD
@@ -1963,47 +1964,48 @@ void executeInstruction(int op, int ni, int pc){ // execute instructions
     return;
 }
 
-void opStore(int regNum, int pc, int xbpe){
+void opStore(int regNum, int pc, int xbpe){ // for store opcode
     int disp, ratio;
     int format;
 
     if(xbpe%2==0){
-            format = 3;
-          disp=getDisp(3,pc,xbpe);
-        }
-        else{
-          disp=getDisp(4,pc,xbpe);
-          format=4;
-        } 
-        ratio=0x10000;
-        for(int i=0;i<3;i++){
-            memory[(disp+i)/16][(disp+i)%16]=reg[regNum]/ratio;
-            ratio/=0x100;
-        }
-        reg[8] += format; 
+        format = 3;
+        disp=getDisp(3,pc,xbpe);
+    }
+    else{
+        disp=getDisp(4,pc,xbpe);
+        format=4;
+    } // get disp
 
-        return;
+    ratio=0x10000;
+    for(int i=0;i<3;i++){
+        memory[(disp+i)/16][(disp+i)%16]=reg[regNum]/ratio;
+        ratio/=0x100;
+    } // load register content to the disp memory
+    reg[8] += format; 
+
+    return;
 }
 
-void opLoad(int regNum, int pc, int xbpe, int ni){
+void opLoad(int regNum, int pc, int xbpe, int ni){ // for load opcode
     int disp, format;
 
     if(xbpe%2==0){
-            disp=getDisp(3,pc,xbpe);
-            disp=calculateDisp(disp, ni);
-            format=3;
-        }
-        else{
-            disp=getDisp(4,pc,xbpe);
-            format=4;
-        }
-        reg[regNum] = disp;
-        reg[8]+=format;
+        disp=getDisp(3,pc,xbpe);
+        disp=calculateDisp(disp, ni);
+        format=3;
+    }
+    else{
+        disp=getDisp(4,pc,xbpe);
+        format=4;
+    } // get disp and its content
+    reg[regNum] = disp; //save to the register
+    reg[8]+=format;
 
-        return;
+    return;
 }
 
-void opCondJump(int cond, int pc, int xbpe, int ni){
+void opCondJump(int cond, int pc, int xbpe, int ni){ // for conditional jump opcode
     int disp, format;
     if(xbpe%2==0){
         disp=getDisp(3,pc,xbpe);
@@ -2015,7 +2017,7 @@ void opCondJump(int cond, int pc, int xbpe, int ni){
     else{
         disp=getDisp(4,pc,xbpe);
         format = 4;
-    }
+    } // get disp and its content
 
     if(cc==cond)
       reg[8] = disp;
@@ -2025,20 +2027,20 @@ void opCondJump(int cond, int pc, int xbpe, int ni){
     return;
 }
 
-int getDisp(int format, int pc, int xbpe){
+int getDisp(int format, int pc, int xbpe){ // for get disp
     int disp=0;
 
     disp=memory[(pc+1)/16][(pc+1)%16]%0x10;
     for(int i=2;i<format;i++){
         disp*=0x100;
         disp+=memory[(pc+i)/16][(pc+i)%16];
-    }
+    } // get disp in memory
 
     if(format==3 && disp/0x100 >= 0x8){
         if (xbpe > 1) {
             disp -= 0x1000;
         }
-    }
+    } // if disp is negetive, use 2's complement
 
     pc += format;
     switch(xbpe){
@@ -2054,22 +2056,22 @@ int getDisp(int format, int pc, int xbpe){
       case 12:
         disp+=reg[3]+reg[1];
         break;
-    }
+    } // calculate disp using pc or base register
 
     return disp;
 }
 
-int calculateDisp(int disp, int ni){
+int calculateDisp(int disp, int ni){ // to calculate disp content
     int result;
 
     switch(ni){
-      case 1:
+      case 1: // immediate addressing
         return disp;
-      case 2:
+      case 2: // indirect addressing
         result=getValue(disp);
         result=getValue(result);
         return result;
-      case 3:
+      case 3: // simple addressing
         result=getValue(disp);
         return result;
     }
@@ -2077,24 +2079,24 @@ int calculateDisp(int disp, int ni){
     return 0;
 }
 
-int getValue(int disp){
+int getValue(int disp){ // to get value
     int result=0;
 
     for(int i=0;i<3;i++){
         result+=memory[(disp+i)/16][(disp+i)%16];
         result*=0x100;
-    }
+    } // use disp, get content of memory
     result/=0x100;
 
     return result;
 }
 
-int isStop(){
+int isStop(){ // for check bp
     breakP* point=bpList->link;
 
     while(point!=NULL){
         if(point->loc==reg[8])
-          return 1;
+          return 1; // if pc register == bp
 
         point=point->link;
     }
