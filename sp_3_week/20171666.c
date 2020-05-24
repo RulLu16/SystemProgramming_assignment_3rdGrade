@@ -1331,7 +1331,7 @@ void orLoader(command co, char o[200]){ // for link and load program
     orHistoryAdd(o);
     
     printf("--------------------------------\n");
-    printf("\t  total length\t%04X\n",program_length);
+    printf("\t  total\tlength\t%04X\n",program_length);
 
 
     /*======================================
@@ -1622,14 +1622,14 @@ void orBp(command co, char o[200]){ // for set break point to debug
     }
     else if(strcmp(co.first, "clear")==0){
         // clear all bp
-        printf("\t[ok] clear all breakpoints\n");
+        printf("\t   [ok]\tclear all breakpoints\n");
         deleteBp();
         orHistoryAdd(o);
     }
     else{
        position=strtol(co.first, NULL, 16); // get bp position
        if(position<=(program_length+program_address) && position>=program_address){ // if address is in range of program
-           printf("\t[ok] create breakpoint %X\n",position);
+           printf("\t   [ok]\tcreate\tbreakpoint %X\n",position);
            addBp(position); // add to bp list
            orHistoryAdd(o);
        }
@@ -1643,15 +1643,15 @@ void orBp(command co, char o[200]){ // for set break point to debug
 void printBp(){ // for print bp
     breakP* present=bpList->link;
 
-    printf("\t\tbreakpoint\n");
-    printf("\t\t----------\n");
+    printf("\t   breakpoint\n");
+    printf("\t   ----------\n");
 
     while(1){
       if(present==NULL){
           break;
       }
 
-      printf("\t\t\t%X\n",present->loc);
+      printf("\t   %X\n",present->loc);
       present=present->link;
     }
 }
@@ -1716,7 +1716,7 @@ void orRun(){ // for order run
         if(isStop()==1 && stop_flag==0){ // if reach to bp, end run
             printRegister();
             stop_flag=1;
-            printf("\tStop at checkpoint[%X]\n",reg[8]);
+            printf("\t     Stop at checkpoint[%X]\n",reg[8]);
             return;
         }
 
@@ -1727,7 +1727,7 @@ void orRun(){ // for order run
     }
 
     printRegister();
-    printf("\tEnd program\n");
+    printf("\t     End program\n");
     end_flag=0;
 
     return;
