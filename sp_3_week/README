@@ -1,5 +1,5 @@
-System programming project 2
-SIC/XE machine + Simple Assembler
+System programming project 3
+SIC/XE machine + Simple Assembler + Simple Linking Loader
 
 ****************************
 
@@ -14,8 +14,11 @@ The memory limit is 0xfffff.
 Limit of a command length is 200.
 Limit of a value length in memory command is 10.
 Limit of each assemble command is 30.
+Limit of break point is program length.
 
 After execute 'assemble' command, it create .lst and .obj file. Please check.
+Only after execute 'loader' command, you can get what you want by using 'run'
+and 'bp' command.
 
 Please remind it. Or you can get unexpected results.
 
