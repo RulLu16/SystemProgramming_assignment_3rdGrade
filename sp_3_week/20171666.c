@@ -1284,7 +1284,13 @@ void symbolDelete(symb* delS){ // for delete symbol list
 }
 
 void orProgAddr(command co){ // for set program start point
-    program_address=strtol(co.first, NULL, 16);
+    int addr=strtol(co.first, NULL, 16);
+
+    if(addr<MAXADDR)
+      program_address=addr;
+
+    else
+      printf("Error: wrong address\n");
 
     return;
 }
@@ -1331,7 +1337,7 @@ void orLoader(command co, char o[200]){ // for link and load program
     orHistoryAdd(o);
     
     printf("--------------------------------\n");
-    printf("\t  total\tlength\t%04X\n",program_length);
+    printf("            total length %04X\n",program_length);
 
 
     /*======================================
@@ -1452,7 +1458,7 @@ void sectionH(char fline[200]){ // H line
     current_length=strtol(sub, NULL, 16); // get current program length
 
     addLinkSymb(location, name); // add to linking symbol list
-    printf("%s\t\t%04X\t%04X\n",name,location,current_length);
+    printf("%s\t\t  %04X\t %04X\n",name,location,current_length);
 
     return;
 }
@@ -1460,7 +1466,9 @@ void sectionH(char fline[200]){ // H line
 void sectionD(char fline[200]){ // D line
     char* sub;
     char name[50];
+    char deleteSpace[50];
     int location;
+    int delIdx=0;
     int size=strlen(fline);
     int index=1;
 
@@ -1475,7 +1483,17 @@ void sectionD(char fline[200]){ // D line
       location+=program_address+program_length; // get definition loc
 
       addLinkSymb(location, name); // add to linking symbol list
-      printf("\t%s\t%04X\n",name,location);
+
+      for(int i=0;i<strlen(name);i++){
+        if(name[i]==' ')
+          continue;
+        deleteSpace[delIdx]=name[i];
+        delIdx++;
+      }
+      deleteSpace[delIdx]='\0'; 
+      delIdx=0; // delete space from name. it is for print.
+
+      printf("\t%6s\t  %04X\n",deleteSpace,location);
       index+=6;
     }
 
@@ -1622,14 +1640,14 @@ void orBp(command co, char o[200]){ // for set break point to debug
     }
     else if(strcmp(co.first, "clear")==0){
         // clear all bp
-        printf("\t   [ok]\tclear all breakpoints\n");
+        printf("             [ok] clear all breakpoints\n");
         deleteBp();
         orHistoryAdd(o);
     }
     else{
        position=strtol(co.first, NULL, 16); // get bp position
        if(position<=(program_length+program_address) && position>=program_address){ // if address is in range of program
-           printf("\t   [ok]\tcreate\tbreakpoint %X\n",position);
+           printf("             [ok] create breakpoint %X\n",position);
            addBp(position); // add to bp list
            orHistoryAdd(o);
        }
@@ -1643,15 +1661,15 @@ void orBp(command co, char o[200]){ // for set break point to debug
 void printBp(){ // for print bp
     breakP* present=bpList->link;
 
-    printf("\t   breakpoint\n");
-    printf("\t   ----------\n");
+    printf("             breakpoint\n");
+    printf("             ----------\n");
 
     while(1){
       if(present==NULL){
           break;
       }
 
-      printf("\t   %X\n",present->loc);
+      printf("             %X\n",present->loc);
       present=present->link;
     }
 }
