@@ -163,6 +163,6 @@ void opStore(int, int, int);
 void opLoad(int, int, int, int);
 void opCondJump(int, int, int, int);
 int getDisp(int, int, int);
-int calculateDisp(int, int);
+int calculateDisp(int, int, int);
 int getValue(int);
 int isStop(); // is breakpoint, return 1

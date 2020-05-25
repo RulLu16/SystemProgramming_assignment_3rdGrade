@@ -1731,7 +1731,7 @@ void orRun(){ // for order run
         initRegister();
     } // when first run
 
-    while(reg[8]<program_length){ // until end program
+    while(reg[8]<program_length+program_address){ // until end program
         if(isStop()==1 && stop_flag==0){ // if reach to bp, end run
             printRegister();
             stop_flag=1;
@@ -1809,7 +1809,7 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
             reg[2] = reg[8]+3;
             disp=getDisp(3,pc,xbpe); // get disp
             if (ni == 2) {
-                disp = calculateDisp(disp, 3);
+                disp = calculateDisp(disp, 3, xbpe);
             }
         }
         else{
@@ -1826,7 +1826,7 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
       case 0x28:
         if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
-            disp = calculateDisp(disp, ni);
+            disp = calculateDisp(disp, ni, xbpe);
             format=3;
         }
         else{
@@ -1851,7 +1851,7 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
         if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
             if (ni == 2) {
-                disp = calculateDisp(disp, 3);
+                disp = calculateDisp(disp, 3, xbpe);
             }
         }
         else{
@@ -1954,7 +1954,7 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
       case 0x50:
         if(xbpe%2==0){
             disp=getDisp(3,pc,xbpe);
-            disp = calculateDisp(disp, ni);
+            disp = calculateDisp(disp, ni, xbpe);
             format=3;
         }
         else{
@@ -1962,7 +1962,7 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
             format=4;
         }
         disp%=0x100;
-        reg[0]+=disp; // load disp's rightmost byte
+        reg[0]=disp; // load disp's rightmost byte
         reg[8]+=format;
         break;
       //WD
@@ -2011,7 +2011,7 @@ void opLoad(int regNum, int pc, int xbpe, int ni){ // for load opcode
 
     if(xbpe%2==0){
         disp=getDisp(3,pc,xbpe);
-        disp=calculateDisp(disp, ni);
+        disp=calculateDisp(disp, ni, xbpe);
         format=3;
     }
     else{
@@ -2030,7 +2030,7 @@ void opCondJump(int cond, int pc, int xbpe, int ni){ // for conditional jump opc
         disp=getDisp(3,pc,xbpe);
         format = 3;
         if (ni == 2) {
-            disp = calculateDisp(disp, 3);
+            disp = calculateDisp(disp, 3, xbpe);
         }
     }
     else{
@@ -2048,6 +2048,7 @@ void opCondJump(int cond, int pc, int xbpe, int ni){ // for conditional jump opc
 
 int getDisp(int format, int pc, int xbpe){ // for get disp
     int disp=0;
+    int temp, ratio;
 
     disp=memory[(pc+1)/16][(pc+1)%16]%0x10;
     for(int i=2;i<format;i++){
@@ -2080,8 +2081,13 @@ int getDisp(int format, int pc, int xbpe){ // for get disp
     return disp;
 }
 
-int calculateDisp(int disp, int ni){ // to calculate disp content
+int calculateDisp(int disp, int ni, int xbpe){ // to calculate disp content
     int result;
+
+    if(xbpe== 10 || xbpe==12){
+        result=memory[(disp)/16][(disp)%16];
+        return result;
+    }
 
     switch(ni){
       case 1: // immediate addressing
