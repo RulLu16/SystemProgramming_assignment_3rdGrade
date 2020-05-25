@@ -1961,8 +1961,9 @@ void executeInstruction(int op, int ni, int pc){ // for execute instructions
             disp=getDisp(4,pc,xbpe);
             format=4;
         }
+        int temp=reg[0]%0x100;
         disp%=0x100;
-        reg[0]=disp; // load disp's rightmost byte
+        reg[0]+=disp-temp; // load disp's rightmost byte
         reg[8]+=format;
         break;
       //WD
