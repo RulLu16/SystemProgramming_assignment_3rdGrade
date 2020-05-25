@@ -66,6 +66,7 @@ His* ed;
 unsigned char memory[65536][16]={0,};
 int duAddr=0;
 int base=0;
+
 int program_address=0;
 int program_length=0;
 int current_length=0;
@@ -76,6 +77,7 @@ int cc=-1; // 0-> 1-= 2-<
 int rd_flag=0;
 int end_flag=0;
 int stop_flag=0;
+
 hash* hTable;
 symb* sPresent;
 symb* sSaved; // symb list for assemble file

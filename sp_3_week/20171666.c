@@ -1646,7 +1646,8 @@ void orBp(command co, char o[200]){ // for set break point to debug
     }
     else{
        position=strtol(co.first, NULL, 16); // get bp position
-       if(position<=(program_length+program_address) && position>=program_address){ // if address is in range of program
+       if(position<=(program_length+program_address) && position>=program_address){ 
+           // if address is in range of program
            printf("             [ok] create breakpoint %X\n",position);
            addBp(position); // add to bp list
            orHistoryAdd(o);
